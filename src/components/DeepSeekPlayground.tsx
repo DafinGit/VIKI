@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,7 @@ export const DeepSeekPlayground = () => {
 
   const tabs = [
     { id: 'chat', label: 'Neural Interface', icon: MessageSquare, color: 'from-blue-500 to-cyan-500' },
-    { id: 'vision', label: 'VIKI Vision', icon: Eye, color: 'from-cyan-500 to-teal-500' },
+    { id: 'vision', label: 'Vision Analysis', icon: Eye, color: 'from-cyan-500 to-teal-500' },
     { id: 'math', label: 'Calculation Matrix', icon: Calculator, color: 'from-green-500 to-emerald-500' },
     { id: 'code', label: 'Code Analysis Core', icon: Code, color: 'from-purple-500 to-violet-500' },
     { id: 'reasoning', label: 'Logic Processor', icon: Brain, color: 'from-orange-500 to-red-500' },

@@ -133,7 +133,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         </p>
         <Button 
           variant="outline" 
-          className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-100 border-cyan-500/40 hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-blue-500/30 hover:border-cyan-400 font-mono shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20"
+          className="bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-100 border-cyan-500/40 hover:bg-gradient-to-r hover:from-cyan-500/40 hover:to-blue-500/40 hover:border-cyan-400 font-mono font-semibold shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20"
         >
           <Upload className="w-4 h-4 mr-2" />
           EXECUTE IMAGE UPLOAD
