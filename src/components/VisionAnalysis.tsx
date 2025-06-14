@@ -56,6 +56,7 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
           <QuickPrompts 
             onPromptSelect={handleQuickPromptSelect}
             isLoading={isLoading}
+            modelMode={modelMode}
           />
           
           <CustomPrompt
