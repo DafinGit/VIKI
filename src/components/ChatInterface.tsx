@@ -21,6 +21,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showThinking, setShowThinking] = useState(false);
+  const [input, setInput] = useState('');
+  const [selectedImage, setSelectedImage] = useState('');
 
   const sendMessage = async (content: string) => {
     const userMessage: Message = { 
@@ -82,6 +84,36 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSendMessage = () => {
+    if (input.trim()) {
+      sendMessage(input);
+      setInput('');
+      setSelectedImage('');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelectedImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage('');
   };
 
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
@@ -165,7 +197,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
       />
 
       {/* Input */}
-      <MessageInput onSendMessage={sendMessage} isLoading={isLoading} />
+      <MessageInput 
+        input={input}
+        onInputChange={setInput}
+        onSendMessage={handleSendMessage}
+        onKeyPress={handleKeyPress}
+        isLoading={isLoading}
+        selectedImage={selectedImage}
+        onImageSelect={handleImageSelect}
+        onRemoveImage={handleRemoveImage}
+      />
     </div>
   );
 };
