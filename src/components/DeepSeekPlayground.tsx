@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Code, Calculator, MessageSquare, Sparkles, Zap, Eye, Cpu, Activity } from 'lucide-react';
+import { Brain, Code, Calculator, MessageSquare, Sparkles, Zap, Eye, Cpu, Activity, LogOut } from 'lucide-react';
 import { ChatInterface } from './ChatInterface';
 import { MathSolver } from './MathSolver';
 import { CodeAnalyzer } from './CodeAnalyzer';
@@ -25,6 +25,11 @@ export const DeepSeekPlayground = () => {
     const key = e.target.value;
     setApiKey(key);
     localStorage.setItem('openrouter-key', key);
+  };
+
+  const handleClearApiKey = () => {
+    setApiKey('');
+    localStorage.removeItem('openrouter-key');
   };
 
   const renderContent = () => {
@@ -109,6 +114,18 @@ export const DeepSeekPlayground = () => {
                 Virtual Interactive Kinetic Intelligence • DeepSeek-R1 Core
               </p>
             </div>
+            {apiKey && (
+              <div className="ml-8">
+                <Button
+                  variant="outline"
+                  onClick={handleClearApiKey}
+                  className="bg-red-500/20 text-red-300 border-red-500/40 hover:bg-red-500/30 hover:border-red-400 font-mono font-semibold shadow-lg shadow-red-500/10 hover:shadow-red-500/20"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  EXIT SESSION
+                </Button>
+              </div>
+            )}
           </div>
           <p className="text-gray-300 text-lg mb-6 font-mono">
             Advanced AI reasoning platform with multimodal cognitive capabilities
