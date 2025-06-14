@@ -1,73 +1,183 @@
-# Welcome to your Lovable project
 
-## Project info
+# 🧠 VIKI Neural System - DeepSeek Reasoning Explorer
 
-**URL**: https://lovable.dev/projects/b6d8197e-4610-4a5b-8113-fc72ec437880
+> **Advanced AI Reasoning Platform with Multimodal Cognitive Capabilities**
 
-## How can I edit this code?
+A sophisticated web application that provides access to DeepSeek-R1's advanced reasoning capabilities through an intuitive neural interface. Experience cutting-edge AI technology with enhanced chain-of-thought reasoning, vision analysis, mathematical problem solving, and code analysis.
 
-There are several ways of editing your application.
+[![DeepSeek-R1](https://img.shields.io/badge/DeepSeek-R1-00D4FF?style=for-the-badge&logo=ai&logoColor=white)](https://openrouter.ai)
+[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 
-**Use Lovable**
+## 🚀 Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b6d8197e-4610-4a5b-8113-fc72ec437880) and start prompting.
+### Core Modules
+- **🧠 Neural Interface** - Advanced conversational AI with deep reasoning
+- **👁️ Vision Analysis** - Multimodal image understanding and analysis
+- **🧮 Calculation Matrix** - Mathematical problem solving with step-by-step reasoning
+- **💻 Code Analysis Core** - Intelligent code review and optimization
+- **🎯 Logic Processor** - Complex reasoning tasks and problem decomposition
 
-Changes made via Lovable will be committed automatically to this repo.
+### AI Capabilities
+- **87.5% AIME 2025** - Mathematical excellence
+- **73.3% LiveCodeBench** - Code generation and analysis
+- **23K Token Reasoning** - Extended context understanding
+- **Enhanced Chain-of-Thought** - Transparent reasoning process
+- **Vision Analysis** - Advanced image processing
 
-**Use your preferred IDE**
+## 🛠️ Technology Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend Framework**: React 18.3.1 with TypeScript
+- **Build Tool**: Vite for lightning-fast development
+- **Styling**: Tailwind CSS with custom animations
+- **UI Components**: shadcn/ui component library
+- **AI Integration**: OpenRouter API with DeepSeek-R1
+- **State Management**: React hooks with localStorage persistence
+- **Icons**: Lucide React icon library
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🏃‍♂️ Quick Start
 
-Follow these steps:
+### Prerequisites
+- Node.js 18+ and npm installed
+- OpenRouter API key ([Get one here](https://openrouter.ai))
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+### Installation
+
+```bash
+# Clone the repository
 git clone <YOUR_GIT_URL>
+cd deepseek-reasoning-explorer
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### API Setup
+1. Visit [OpenRouter.ai](https://openrouter.ai) to get your API key
+2. Launch the application
+3. Enter your API key in the authorization interface
+4. Start exploring AI reasoning capabilities!
 
-**Use GitHub Codespaces**
+## 🎮 Usage
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Getting Started
+1. **Authorization**: Enter your OpenRouter API key when prompted
+2. **Module Selection**: Choose from 5 specialized AI modules
+3. **Interaction**: Engage with the AI through the neural interface
+4. **Session Management**: Use the "EXIT SESSION" button to switch API keys
 
-## What technologies are used for this project?
+### Available Modules
 
-This project is built with:
+#### 🗨️ Neural Interface
+- Natural conversation with DeepSeek-R1
+- Context-aware responses
+- Extended reasoning chains
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+#### 👁️ Vision Analysis
+- Upload and analyze images
+- Detailed visual understanding
+- Multimodal reasoning
 
-## How can I deploy this project?
+#### 🧮 Calculation Matrix
+- Mathematical problem solving
+- Step-by-step solutions
+- Complex equation handling
 
-Simply open [Lovable](https://lovable.dev/projects/b6d8197e-4610-4a5b-8113-fc72ec437880) and click on Share -> Publish.
+#### 💻 Code Analysis Core
+- Code review and optimization
+- Bug detection and fixes
+- Performance improvements
 
-## Can I connect a custom domain to my Lovable project?
+#### 🎯 Logic Processor
+- Complex reasoning tasks
+- Problem decomposition
+- Logical analysis
 
-Yes, you can!
+## 🔧 Development
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Project Structure
+```
+src/
+├── components/          # React components
+│   ├── ui/             # shadcn/ui components
+│   ├── ChatInterface/  # Chat functionality
+│   ├── VisionAnalysis/ # Image analysis
+│   └── ...
+├── pages/              # Application pages
+├── hooks/              # Custom React hooks
+└── lib/                # Utility functions
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Available Scripts
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run lint     # Run ESLint
+```
+
+## 🚀 Deployment
+
+### Via Lovable Platform
+1. Open your [Lovable Project](https://lovable.dev/projects/b6d8197e-4610-4a5b-8113-fc72ec437880)
+2. Click **Share** → **Publish**
+3. Your app will be live instantly!
+
+### Manual Deployment
+```bash
+npm run build
+# Deploy the 'dist' folder to your hosting provider
+```
+
+### Custom Domain
+Connect your own domain through:
+**Project** → **Settings** → **Domains** → **Connect Domain**
+
+*Note: Paid Lovable plan required for custom domains*
+
+## 🔑 Environment Variables
+
+No environment variables required - API keys are managed through the UI for security and flexibility.
+
+## 🤝 Contributing
+
+This project is built with [Lovable](https://lovable.dev) - an AI-powered development platform.
+
+### Development Workflow
+1. Make changes via Lovable's AI interface
+2. Changes auto-sync to GitHub
+3. Test in the live preview
+4. Deploy instantly
+
+### Local Development
+1. Clone the repository
+2. Make your changes
+3. Push to GitHub
+4. Changes will sync to Lovable automatically
+
+## 📜 License
+
+Built with ❤️ using Lovable's AI development platform.
+
+## 🔗 Links
+
+- **Live Demo**: [Your deployed app URL]
+- **Lovable Project**: [Lovable Editor](https://lovable.dev/projects/b6d8197e-4610-4a5b-8113-fc72ec437880)
+- **OpenRouter**: [Get API Key](https://openrouter.ai)
+- **Documentation**: [Lovable Docs](https://docs.lovable.dev)
+
+---
+
+<div align="center">
+
+**Powered by DeepSeek-R1 • Built with Neural Excellence**
+
+*© 2025 VIKI Neural Systems™. Advanced AI Technology Platform*
+
+</div>
