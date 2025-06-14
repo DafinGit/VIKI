@@ -1,118 +1,42 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { ChatControls } from './ChatControls';
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { MessageSquare, Activity, Cpu, Brain, Zap } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  thinking?: string;
-  timestamp: Date;
-  image?: string;
-}
+import { ChatControls } from './ChatControls';
 
 interface ChatInterfaceProps {
   apiKey: string;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; thinking?: string; }>>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showThinking, setShowThinking] = useState(true);
-  const [selectedImage, setSelectedImage] = useState<string>('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showThinking, setShowThinking] = useState(false);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        setSelectedImage(dataUrl);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeImage = () => {
-    setSelectedImage('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userMessage: Message = {
-      role: 'user',
-      content: input,
-      timestamp: new Date(),
-      image: selectedImage || undefined,
-    };
-
+  const sendMessage = async (content: string) => {
+    const userMessage = { role: 'user' as const, content };
     setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    const currentImage = selectedImage;
-    setSelectedImage('');
     setIsLoading(true);
 
     try {
-      const messageContent = currentImage ? [
-        {
-          type: 'text',
-          text: input
-        },
-        {
-          type: 'image_url',
-          image_url: {
-            url: currentImage
-          }
-        }
-      ] : input;
-
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': window.location.origin,
-          'X-Title': 'DeepSeek-R1 Playground'
+          'X-Title': 'DeepSeek-R1 Chat'
         },
         body: JSON.stringify({
           model: 'deepseek/deepseek-r1:free',
           messages: [
-            {
-              role: 'system',
-              content: '该助手为DeepSeek-R1，由深度求索公司创造。\n今天是' + new Date().toLocaleDateString('zh-CN', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric', 
-                weekday: 'long' 
-              }) + '。'
-            },
-            ...messages.map(msg => ({ 
-              role: msg.role, 
-              content: msg.image ? [
-                { type: 'text', text: msg.content },
-                { type: 'image_url', image_url: { url: msg.image } }
-              ] : msg.content 
-            })),
-            { role: 'user', content: messageContent }
+            ...messages.map(msg => ({ role: msg.role, content: msg.content })),
+            userMessage
           ],
-          temperature: 0.6,
-          top_p: 0.95,
+          temperature: 0.7,
           max_tokens: 4000,
         }),
       });
@@ -124,25 +48,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
       const data = await response.json();
       const assistantResponse = data.choices[0].message.content;
       
-      // Extract thinking content if present
+      // Extract thinking process if present
       const thinkingMatch = assistantResponse.match(/<think>([\s\S]*?)<\/think>/);
-      const thinking = thinkingMatch ? thinkingMatch[1] : null;
-      const content = assistantResponse.replace(/<think>[\s\S]*?<\/think>/, '').trim();
-
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: content || assistantResponse,
-        thinking: thinking || undefined,
-        timestamp: new Date(),
+      const thinking = thinkingMatch ? thinkingMatch[1].trim() : '';
+      const content = assistantResponse.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      
+      const assistantMessage = { 
+        role: 'assistant' as const, 
+        content,
+        thinking: thinking || undefined
       };
-
+      
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please check your API key and try again.',
-        timestamp: new Date(),
+      const errorMessage = { 
+        role: 'assistant' as const, 
+        content: '❌ NEURAL COMMUNICATION ERROR: Unable to establish connection with DeepSeek reasoning core. Please verify neural link integrity and retry transmission.' 
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -150,37 +72,81 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
   return (
-    <div className="space-y-4">
-      <ChatControls 
-        showThinking={showThinking}
-        onToggleThinking={() => setShowThinking(!showThinking)}
-      />
-      
-      <MessageList 
-        messages={messages}
-        showThinking={showThinking}
-        isLoading={isLoading}
-        messagesEndRef={messagesEndRef}
-      />
-      
-      <MessageInput 
-        input={input}
-        onInputChange={setInput}
-        onSendMessage={sendMessage}
-        onKeyPress={handleKeyPress}
-        isLoading={isLoading}
-        selectedImage={selectedImage}
-        onImageSelect={handleImageSelect}
-        onRemoveImage={removeImage}
-      />
+    <div className="space-y-6">
+      {/* Header */}
+      <Card className="p-6 bg-black/40 backdrop-blur-md border border-blue-500/30 shadow-lg shadow-blue-500/5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <MessageSquare className="w-8 h-8 text-blue-400" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 font-mono">
+                NEURAL INTERFACE
+              </h2>
+              <p className="text-blue-300 font-mono text-sm">Interactive Communication Protocol</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/40 font-mono">
+              <Brain className="w-4 h-4 mr-1" />
+              Free Tier
+            </Badge>
+            <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/40 font-mono">
+              <Activity className="w-4 h-4 mr-1" />
+              Multimodal
+            </Badge>
+          </div>
+        </div>
+        <div className="p-4 bg-gradient-to-r from-blue-900/20 to-cyan-900/20 border border-blue-500/30 rounded-lg">
+          <p className="text-blue-300 font-mono text-sm">
+            NEURAL STATUS: Advanced conversational AI with enhanced reasoning capabilities. Direct neural interface to DeepSeek-R1 cognitive processing matrix.
+          </p>
+        </div>
+      </Card>
+
+      {/* Chat Controls */}
+      <Card className="p-6 bg-black/40 backdrop-blur-md border border-blue-500/30 shadow-lg shadow-blue-500/5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Cpu className="w-6 h-6 text-blue-400" />
+            <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 font-mono">
+              COMMUNICATION CONTROLS
+            </h3>
+          </div>
+          <button
+            onClick={() => setShowThinking(!showThinking)}
+            className={`px-4 py-2 rounded-lg font-mono text-sm transition-all duration-300 ${
+              showThinking 
+                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/25' 
+                : 'bg-black/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/10'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              {showThinking ? 'HIDE' : 'SHOW'} THINKING PROCESS
+            </div>
+          </button>
+        </div>
+        <div className="mt-4 p-3 bg-gradient-to-r from-gray-800/50 to-gray-900/50 rounded-lg border border-gray-600/30">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-green-400" />
+            <span className="text-green-400 font-mono text-sm font-semibold">
+              NEURAL LINK STATUS: ACTIVE
+            </span>
+            <div className="flex-1 h-px bg-gradient-to-r from-green-400/50 to-transparent"></div>
+            <span className="text-gray-400 font-mono text-xs">DEEPSEEK-R1 ONLINE</span>
+          </div>
+        </div>
+      </Card>
+
+      {/* Messages */}
+      <MessageList messages={messages} showThinking={showThinking} />
+
+      {/* Input */}
+      <MessageInput onSendMessage={sendMessage} isLoading={isLoading} />
     </div>
   );
 };
