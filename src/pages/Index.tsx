@@ -10,7 +10,7 @@ const Index = () => {
         <DeepSeekPlayground />
         
         {/* Footer */}
-        <footer className="py-8 text-center border-t border-cyan-500/20 mt-12">
+        <footer className="py-8 text-center mt-12">
           <div className="max-w-7xl mx-auto px-4">
             <p className="text-gray-400 text-sm font-mono">
               © 2025 VIKI Neural Systems™. All rights reserved. | Advanced AI Technology Platform
