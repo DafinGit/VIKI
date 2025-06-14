@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Scan, Target } from 'lucide-react';
 
 interface ImageUploadProps {
   onImageSelect: (file: File, dataUrl: string) => void;
@@ -61,23 +61,34 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   if (selectedImage) {
     return (
-      <Card className="p-4 bg-white/10 backdrop-blur-md border-white/20">
-        <div className="relative">
+      <Card className="p-6 bg-black/40 backdrop-blur-md border border-cyan-500/30 shadow-lg shadow-cyan-500/5">
+        <div className="flex items-center gap-3 mb-4">
+          <Target className="w-6 h-6 text-green-400" />
+          <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400 font-mono">
+            IMAGE ACQUIRED - READY FOR ANALYSIS
+          </h3>
+        </div>
+        
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-lg blur-sm group-hover:blur-none transition-all duration-300"></div>
           <img 
             src={selectedImage} 
-            alt="Selected" 
-            className="w-full max-w-md mx-auto rounded-lg"
+            alt="Neural Analysis Target" 
+            className="relative w-full max-w-md mx-auto rounded-lg border border-cyan-500/30 shadow-lg shadow-cyan-500/10"
           />
           {onRemoveImage && (
             <Button
               variant="destructive"
               size="sm"
               onClick={onRemoveImage}
-              className="absolute top-2 right-2"
+              className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm border border-red-400/50"
             >
               <X className="w-4 h-4" />
             </Button>
           )}
+          <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full">
+            <span className="text-green-400 font-mono text-xs font-semibold">TARGET LOCKED</span>
+          </div>
         </div>
       </Card>
     );
@@ -85,10 +96,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   return (
     <Card 
-      className={`p-6 border-2 border-dashed transition-colors cursor-pointer ${
+      className={`p-8 border-2 border-dashed transition-all duration-300 cursor-pointer ${
         isDragOver 
-          ? 'border-blue-400 bg-blue-500/10' 
-          : 'border-white/30 bg-white/5'
+          ? 'border-cyan-400 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 shadow-lg shadow-cyan-500/20' 
+          : 'border-cyan-500/40 bg-black/20 hover:border-cyan-400 hover:bg-gradient-to-r hover:from-cyan-500/10 hover:to-blue-500/10'
       }`}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
@@ -96,20 +107,36 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       onClick={handleClick}
     >
       <div className="text-center">
-        <div className="flex justify-center mb-4">
-          {isDragOver ? (
-            <Upload className="w-12 h-12 text-blue-400 animate-pulse" />
-          ) : (
-            <ImageIcon className="w-12 h-12 text-gray-400" />
-          )}
+        <div className="flex justify-center mb-6">
+          <div className="relative">
+            {isDragOver ? (
+              <div className="w-20 h-20 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center animate-pulse">
+                <Upload className="w-10 h-10 text-white" />
+              </div>
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-gradient-to-r from-gray-700 to-gray-800 flex items-center justify-center border border-cyan-500/30">
+                <ImageIcon className="w-10 h-10 text-cyan-400" />
+              </div>
+            )}
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center">
+              <Scan className="w-3 h-3 text-black" />
+            </div>
+          </div>
         </div>
-        <p className="text-white font-medium mb-2">Upload an Image</p>
-        <p className="text-gray-400 text-sm mb-4">
-          Drag and drop an image here, or click to select
+        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono mb-2">
+          INITIALIZE IMAGE CAPTURE PROTOCOL
+        </h3>
+        <p className="text-gray-400 text-sm font-mono mb-6 leading-relaxed">
+          Drag and drop visual data here, or execute manual selection protocol
+          <br />
+          <span className="text-cyan-400">Supported formats: JPG, PNG, WEBP | Max size: 10MB</span>
         </p>
-        <Button variant="outline" className="bg-white/10 text-white border-white/20">
+        <Button 
+          variant="outline" 
+          className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/40 hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-blue-500/30 hover:border-cyan-400 font-mono"
+        >
           <Upload className="w-4 h-4 mr-2" />
-          Choose Image
+          EXECUTE IMAGE UPLOAD
         </Button>
         <input
           ref={fileInputRef}
