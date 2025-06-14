@@ -4,42 +4,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VIKI Neural System - DeepSeek Reasoning Explorer</title>
+  <title>DeepSeek Reasoning Explorer</title>
   <script>
-    // GitHub Pages SPA redirect script
-    // Store the path and redirect to index.html with the path as a parameter
-    const pathSegmentsToKeep = 1; // For /VIKI-Neural-System/
-    const l = window.location;
-    
-    if (l.pathname.length > 0) {
-      const path = l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/');
-      const search = l.search;
-      const hash = l.hash;
-      
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        '/' + l.pathname.split('/')[1] + '/' +
-        (path ? '?p=/' + path : '') +
-        (search ? (path ? '&' : '?') + search.slice(1) : '') +
-        hash
-      );
-    }
+    // Store the current path and redirect to index.html with the path as a parameter
+    const path = window.location.pathname.slice('/deepseek-reasoning-explorer'.length);
+    const search = window.location.search;
+    window.history.replaceState(null, null, '/deepseek-reasoning-explorer/' + (path ? '?p=' + path : '') + search);
+    window.location.replace('/deepseek-reasoning-explorer/');
   </script>
 </head>
 <body>
-  <div style="
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    font-family: monospace;
-    background: linear-gradient(45deg, #0f172a, #1e293b);
-    color: #06b6d4;
-  ">
-    <div style="text-align: center;">
-      <div style="font-size: 24px; margin-bottom: 20px;">🧠 VIKI Neural System</div>
-      <div>Initializing neural pathways...</div>
-    </div>
-  </div>
+  <div>Redirecting...</div>
 </body>
 </html>

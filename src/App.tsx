@@ -11,16 +11,9 @@ const queryClient = new QueryClient();
 
 // Check if we're in production (GitHub Pages) or development
 const isProduction = import.meta.env.PROD;
-const isGitHubPages = window.location.hostname.includes('github.io');
-const basename = isProduction && isGitHubPages ? '/VIKI-Neural-System' : '';
+const basename = isProduction ? '/deepseek-reasoning-explorer' : '';
 
-console.log('Environment:', { 
-  isProduction, 
-  isGitHubPages, 
-  basename, 
-  hostname: window.location.hostname,
-  pathname: window.location.pathname 
-});
+console.log('Environment:', { isProduction, basename, hostname: window.location.hostname });
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
