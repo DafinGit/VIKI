@@ -64,7 +64,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       <Card className="p-6 bg-black/40 backdrop-blur-md border border-cyan-500/30 shadow-lg shadow-cyan-500/5">
         <div className="flex items-center gap-3 mb-4">
           <Target className="w-6 h-6 text-green-400" />
-          <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400 font-mono">
+          <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400 font-mono">
             IMAGE ACQUIRED - READY FOR ANALYSIS
           </h3>
         </div>
@@ -123,17 +123,17 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
             </div>
           </div>
         </div>
-        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono mb-2">
+        <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono mb-2">
           INITIALIZE IMAGE CAPTURE PROTOCOL
         </h3>
-        <p className="text-gray-400 text-sm font-mono mb-6 leading-relaxed">
+        <p className="text-gray-300 text-sm font-mono mb-6 leading-relaxed">
           Drag and drop visual data here, or execute manual selection protocol
           <br />
           <span className="text-cyan-400">Supported formats: JPG, PNG, WEBP | Max size: 10MB</span>
         </p>
         <Button 
           variant="outline" 
-          className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/40 hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-blue-500/30 hover:border-cyan-400 font-mono"
+          className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-100 border-cyan-500/40 hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-blue-500/30 hover:border-cyan-400 font-mono shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20"
         >
           <Upload className="w-4 h-4 mr-2" />
           EXECUTE IMAGE UPLOAD

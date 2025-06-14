@@ -21,7 +21,7 @@ export const VisionHeader: React.FC<VisionHeaderProps> = ({ selectedImage, image
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono">
               VIKI VISION SYSTEM
             </h2>
             <p className="text-cyan-300 text-sm font-mono">Neural Network Analysis Engine v2.1</p>
