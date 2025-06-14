@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  base: '/deepseek-reasoning-explorer/',
+  base: mode === 'production' ? '/VIKI-Neural-System/' : '/',
   plugins: [
     react(),
     mode === 'development' &&
