@@ -28,6 +28,8 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
   ];
 
   const handleImageSelect = (file: File, dataUrl: string) => {
+    console.log('Selected image file:', file.name, file.type, file.size);
+    console.log('Data URL length:', dataUrl.length);
     setImageFile(file);
     setSelectedImage(dataUrl);
     setAnalysis('');
@@ -40,14 +42,49 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
   };
 
   const analyzeImage = async (promptText: string) => {
-    if (!selectedImage || !imageFile) return;
+    if (!selectedImage || !imageFile) {
+      console.error('No image selected');
+      return;
+    }
     
     setIsLoading(true);
     setAnalysis('');
 
     try {
-      // Convert image to base64
-      const base64Image = selectedImage.split(',')[1];
+      // Ensure we have a proper base64 string
+      let base64Image = selectedImage;
+      if (base64Image.includes(',')) {
+        base64Image = base64Image.split(',')[1];
+      }
+      
+      console.log('Analyzing image with prompt:', promptText);
+      console.log('Image type:', imageFile.type);
+      console.log('Base64 length:', base64Image.length);
+      
+      const requestBody = {
+        model: 'deepseek/deepseek-r1:free',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: promptText
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${imageFile.type};base64,${base64Image}`
+                }
+              }
+            ]
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 4000,
+      };
+
+      console.log('Sending request to OpenRouter API...');
       
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -57,39 +94,24 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
           'HTTP-Referer': window.location.origin,
           'X-Title': 'DeepSeek-R1 Vision Analysis'
         },
-        body: JSON.stringify({
-          model: 'deepseek/deepseek-r1:free',
-          messages: [
-            {
-              role: 'system',
-              content: '你是一个专业的图像分析助手。请仔细观察图像并提供详细、准确的分析。'
-            },
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: promptText
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: `data:${imageFile.type};base64,${base64Image}`
-                  }
-                }
-              ]
-            }
-          ],
-          temperature: 0.3,
-          max_tokens: 4000,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('API Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API Error:', response.status, errorText);
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('API Response:', data);
+      
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error('Invalid API response format');
+      }
+      
       const result = data.choices[0].message.content;
       
       // Remove thinking tags for cleaner display
@@ -97,7 +119,7 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
       setAnalysis(cleanResult);
     } catch (error) {
       console.error('Error analyzing image:', error);
-      setAnalysis('Sorry, I encountered an error while analyzing the image. Please try again.');
+      setAnalysis(`Sorry, I encountered an error while analyzing the image: ${error.message}. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +142,13 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
         <p className="text-gray-300">
           Upload images and let DeepSeek-R1 analyze them with advanced computer vision capabilities.
         </p>
+        {selectedImage && (
+          <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <p className="text-blue-300 text-sm">
+              ✓ Image loaded: {imageFile?.name} ({imageFile?.type}, {Math.round((imageFile?.size || 0) / 1024)}KB)
+            </p>
+          </div>
+        )}
       </Card>
 
       {/* Image Upload */}
@@ -194,12 +223,12 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
         <Card className="p-6 bg-white/10 backdrop-blur-md border-white/20">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Zap className="w-5 h-5 text-yellow-400" />
-            Vision Analysis
+            Vision Analysis Result
           </h3>
           <div className="prose prose-invert max-w-none">
-            <pre className="whitespace-pre-wrap text-gray-200 font-mono text-sm bg-gray-900/50 p-4 rounded-lg border border-gray-700/50">
+            <div className="whitespace-pre-wrap text-gray-200 text-sm bg-gray-900/50 p-4 rounded-lg border border-gray-700/50">
               {analysis}
-            </pre>
+            </div>
           </div>
         </Card>
       )}
