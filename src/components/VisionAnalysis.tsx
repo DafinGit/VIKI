@@ -5,6 +5,9 @@ import { QuickPrompts } from './QuickPrompts';
 import { CustomPrompt } from './CustomPrompt';
 import { AnalysisResult } from './AnalysisResult';
 import { ImageUpload } from './ImageUpload';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Stethoscope, Eye } from 'lucide-react';
 
 interface VisionAnalysisProps {
   apiKey: string;
@@ -16,6 +19,24 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
   const [prompt, setPrompt] = useState('');
   const [analysis, setAnalysis] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [modelMode, setModelMode] = useState<'normal' | 'medical'>('normal');
+
+  const getModelsForMode = (mode: 'normal' | 'medical') => {
+    if (mode === 'medical') {
+      return [
+        'google/gemma-3-4b-it:free',
+        'google/gemini-2.0-flash-exp:free',
+        'openai/gpt-4o'
+      ];
+    } else {
+      return [
+        'google/gemini-2.0-flash-exp:free',
+        'openai/gpt-4o',
+        'anthropic/claude-3.5-sonnet',
+        'google/gemini-pro-vision'
+      ];
+    }
+  };
 
   const handleImageSelect = (file: File, dataUrl: string) => {
     console.log('=== IMAGE SELECTION DEBUG ===');
@@ -74,6 +95,7 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
     try {
       console.log('=== STARTING VISION ANALYSIS ===');
       console.log('Prompt:', promptText);
+      console.log('Model mode:', modelMode);
       console.log('Image file info:', {
         name: imageFile.name,
         type: imageFile.type,
@@ -105,15 +127,15 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
         throw new Error(`Invalid base64 format: ${e.message}`);
       }
 
-      // Test different model approaches
-      const models = [
-        'openai/gpt-4o',
-        'anthropic/claude-3.5-sonnet', 
-        'google/gemini-pro-vision'
-      ];
+      // Get models based on selected mode
+      const models = getModelsForMode(modelMode);
       
       for (const modelName of models) {
-        console.log(`🧪 Trying model: ${modelName}`);
+        console.log(`🧪 Trying model: ${modelName} (${modelMode} mode)`);
+        
+        const contextPrompt = modelMode === 'medical' 
+          ? `You are a medical AI assistant analyzing a medical image. Focus on medical details, conditions, anatomy, and clinical observations. ${promptText}`
+          : `IMPORTANT: You are analyzing an image. Please describe EXACTLY what you see in this specific image. ${promptText}`;
         
         const requestBody = {
           model: modelName,
@@ -123,7 +145,7 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
               content: [
                 {
                   type: 'text',
-                  text: `IMPORTANT: You are analyzing an image. Please describe EXACTLY what you see in this specific image. ${promptText}`
+                  text: contextPrompt
                 },
                 {
                   type: 'image_url',
@@ -134,8 +156,8 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
               ]
             }
           ],
-          temperature: 0.1,
-          max_tokens: 1000,
+          temperature: modelMode === 'medical' ? 0.1 : 0.1,
+          max_tokens: 1500,
         };
 
         console.log(`Request for ${modelName}:`, {
@@ -152,7 +174,7 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
               'Authorization': `Bearer ${apiKey}`,
               'Content-Type': 'application/json',
               'HTTP-Referer': window.location.origin,
-              'X-Title': 'Vision Analysis Test'
+              'X-Title': 'Vision Analysis'
             },
             body: JSON.stringify(requestBody),
           });
@@ -179,21 +201,7 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
             const result = data.choices[0].message.content;
             console.log(`📝 Response preview from ${modelName}:`, result.substring(0, 200));
             
-            // Check if response seems to match expected image content
-            const lowerResult = result.toLowerCase();
-            const gameIndicators = ['game', 'counter', 'strike', 'weapon', 'player', 'fps', 'tactical', 'soldier'];
-            const forestIndicators = ['forest', 'tree', 'stream', 'river', 'moss', 'tropical', 'rainforest'];
-            
-            const gameScore = gameIndicators.filter(word => lowerResult.includes(word)).length;
-            const forestScore = forestIndicators.filter(word => lowerResult.includes(word)).length;
-            
-            console.log(`Content analysis for ${modelName}:`, {
-              gameIndicators: gameScore,
-              forestIndicators: forestScore,
-              likelyCorrect: gameScore > forestScore
-            });
-            
-            setAnalysis(`**Model Used:** ${modelName}\n\n**Analysis:**\n${result}\n\n**Debug Info:** Game indicators: ${gameScore}, Forest indicators: ${forestScore}`);
+            setAnalysis(`**Model Used:** ${modelName} (${modelMode} mode)\n\n**Analysis:**\n${result}`);
             return; // Success, exit function
           }
         } catch (modelError) {
@@ -235,6 +243,40 @@ export const VisionAnalysis: React.FC<VisionAnalysisProps> = ({ apiKey }) => {
 
       {selectedImage && (
         <>
+          <Card className="p-4 bg-white/10 backdrop-blur-md border-white/20">
+            <h3 className="text-lg font-semibold text-white mb-3">Analysis Mode</h3>
+            <div className="flex gap-3">
+              <Button
+                variant={modelMode === 'normal' ? 'default' : 'outline'}
+                onClick={() => setModelMode('normal')}
+                className={modelMode === 'normal' 
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' 
+                  : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
+                }
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Normal Vision
+              </Button>
+              <Button
+                variant={modelMode === 'medical' ? 'default' : 'outline'}
+                onClick={() => setModelMode('medical')}
+                className={modelMode === 'medical' 
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' 
+                  : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
+                }
+              >
+                <Stethoscope className="w-4 h-4 mr-2" />
+                Medical Analysis
+              </Button>
+            </div>
+            <p className="text-sm text-gray-300 mt-2">
+              {modelMode === 'medical' 
+                ? 'Uses Gemma 3 4B and Gemini 2.0 Flash for medical image analysis'
+                : 'Uses Gemini 2.0 Flash and other vision models for general analysis'
+              }
+            </p>
+          </Card>
+
           <QuickPrompts 
             onPromptSelect={handleQuickPromptSelect}
             isLoading={isLoading}
