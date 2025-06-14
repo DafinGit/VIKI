@@ -5,19 +5,29 @@ import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Activity, Cpu, Brain, Zap } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
-import { ChatControls } from './ChatControls';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  thinking?: string;
+  timestamp: Date;
+}
 
 interface ChatInterfaceProps {
   apiKey: string;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; thinking?: string; }>>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showThinking, setShowThinking] = useState(false);
 
   const sendMessage = async (content: string) => {
-    const userMessage = { role: 'user' as const, content };
+    const userMessage: Message = { 
+      role: 'user' as const, 
+      content,
+      timestamp: new Date()
+    };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
@@ -34,7 +44,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
           model: 'deepseek/deepseek-r1:free',
           messages: [
             ...messages.map(msg => ({ role: msg.role, content: msg.content })),
-            userMessage
+            { role: userMessage.role, content: userMessage.content }
           ],
           temperature: 0.7,
           max_tokens: 4000,
@@ -53,24 +63,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
       const thinking = thinkingMatch ? thinkingMatch[1].trim() : '';
       const content = assistantResponse.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
       
-      const assistantMessage = { 
+      const assistantMessage: Message = { 
         role: 'assistant' as const, 
         content,
-        thinking: thinking || undefined
+        thinking: thinking || undefined,
+        timestamp: new Date()
       };
       
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage = { 
+      const errorMessage: Message = { 
         role: 'assistant' as const, 
-        content: '❌ NEURAL COMMUNICATION ERROR: Unable to establish connection with DeepSeek reasoning core. Please verify neural link integrity and retry transmission.' 
+        content: '❌ NEURAL COMMUNICATION ERROR: Unable to establish connection with DeepSeek reasoning core. Please verify neural link integrity and retry transmission.',
+        timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   return (
     <div className="space-y-6">
@@ -143,7 +157,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
       </Card>
 
       {/* Messages */}
-      <MessageList messages={messages} showThinking={showThinking} />
+      <MessageList 
+        messages={messages} 
+        showThinking={showThinking} 
+        isLoading={isLoading}
+        messagesEndRef={messagesEndRef}
+      />
 
       {/* Input */}
       <MessageInput onSendMessage={sendMessage} isLoading={isLoading} />
