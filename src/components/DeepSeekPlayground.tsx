@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Code, Calculator, MessageSquare, Sparkles, Zap } from 'lucide-react';
+import { Brain, Code, Calculator, MessageSquare, Sparkles, Zap, Eye } from 'lucide-react';
 import { ChatInterface } from './ChatInterface';
 import { MathSolver } from './MathSolver';
 import { CodeAnalyzer } from './CodeAnalyzer';
 import { ReasoningTasks } from './ReasoningTasks';
+import { VisionAnalysis } from './VisionAnalysis';
 
 export const DeepSeekPlayground = () => {
   const [activeTab, setActiveTab] = useState('chat');
@@ -15,6 +16,7 @@ export const DeepSeekPlayground = () => {
 
   const tabs = [
     { id: 'chat', label: 'AI Chat', icon: MessageSquare, color: 'from-blue-500 to-cyan-500' },
+    { id: 'vision', label: 'Vision Analysis', icon: Eye, color: 'from-cyan-500 to-teal-500' },
     { id: 'math', label: 'Math Solver', icon: Calculator, color: 'from-green-500 to-emerald-500' },
     { id: 'code', label: 'Code Analysis', icon: Code, color: 'from-purple-500 to-violet-500' },
     { id: 'reasoning', label: 'Complex Reasoning', icon: Brain, color: 'from-orange-500 to-red-500' },
@@ -57,6 +59,8 @@ export const DeepSeekPlayground = () => {
     switch (activeTab) {
       case 'chat':
         return <ChatInterface apiKey={apiKey} />;
+      case 'vision':
+        return <VisionAnalysis apiKey={apiKey} />;
       case 'math':
         return <MathSolver apiKey={apiKey} />;
       case 'code':
@@ -83,7 +87,7 @@ export const DeepSeekPlayground = () => {
             </h1>
           </div>
           <p className="text-gray-300 text-lg mb-4">
-            Experience the power of DeepSeek-R1-0528 - Advanced AI reasoning with 87.5% AIME performance
+            Experience the power of DeepSeek-R1-0528 - Advanced AI reasoning with multimodal capabilities
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
@@ -94,6 +98,9 @@ export const DeepSeekPlayground = () => {
             </Badge>
             <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500/30">
               🧠 23K Token Reasoning
+            </Badge>
+            <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
+              👁️ Vision Analysis
             </Badge>
             <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 border-orange-500/30">
               ⚡ Enhanced Chain-of-Thought
