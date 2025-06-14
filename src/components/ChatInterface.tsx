@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Cpu, Activity, Zap } from 'lucide-react';
@@ -24,7 +24,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const [currentModel, setCurrentModel] = useState('deepseek/deepseek-r1');
   const [temperature, setTemperature] = useState(0.1);
   const [maxTokens, setMaxTokens] = useState(8000);
-  const [inputValue, setInputValue] = useState('');
+  const [input, setInput] = useState('');
+  const [showThinking, setShowThinking] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const models = [
     'deepseek/deepseek-r1',
@@ -33,23 +35,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
     'google/gemini-2.0-flash-exp:free',
   ];
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim() || isLoading) return;
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
       role: 'user',
-      content: content.trim(),
+      content: input.trim(),
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-    setInputValue('');
+    setInput('');
 
     try {
       console.log('=== SENDING CHAT MESSAGE ===');
       console.log('Model:', currentModel);
-      console.log('Message:', content);
+      console.log('Message:', input);
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -68,7 +74,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
             })),
             {
               role: 'user',
-              content: content.trim()
+              content: input.trim()
             }
           ],
           temperature,
@@ -107,8 +113,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   const clearMessages = () => {
     setMessages([]);
+  };
+
+  const toggleThinking = () => {
+    setShowThinking(prev => !prev);
   };
 
   return (
@@ -151,24 +168,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
       </Card>
 
       <ChatControls
-        currentModel={currentModel}
-        setCurrentModel={setCurrentModel}
-        temperature={temperature}
-        setTemperature={setTemperature}
-        maxTokens={maxTokens}
-        setMaxTokens={setMaxTokens}
-        models={models}
-        onClear={clearMessages}
-        messageCount={messages.length}
+        showThinking={showThinking}
+        onToggleThinking={toggleThinking}
       />
 
-      <MessageList messages={messages} />
+      <MessageList
+        messages={messages}
+        showThinking={showThinking}
+        isLoading={isLoading}
+        messagesEndRef={messagesEndRef}
+      />
 
       <MessageInput
-        value={inputValue}
-        onChange={setInputValue}
+        input={input}
+        onInputChange={setInput}
         onSendMessage={handleSendMessage}
+        onKeyPress={handleKeyPress}
         isLoading={isLoading}
+        selectedImage=""
+        onImageSelect={() => {}}
+        onRemoveImage={() => {}}
       />
     </div>
   );
