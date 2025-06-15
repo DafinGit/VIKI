@@ -22,6 +22,7 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
 }) => {
   const speech = useSpeechSynthesis();
   const recognition = useSpeechRecognition();
+  const lastProcessedTranscriptRef = React.useRef<string>('');
 
   const supportedLanguages = [
     { code: 'en-US', name: 'English (US)', flag: '🇺🇸' },
@@ -40,8 +41,14 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
   ];
 
   React.useEffect(() => {
-    if (recognition.transcript) {
-      onVoiceInput(recognition.transcript);
+    // Only process new transcripts to prevent duplicates
+    if (recognition.transcript && 
+        recognition.transcript !== lastProcessedTranscriptRef.current &&
+        recognition.transcript.trim().length > 0) {
+      
+      console.log('Processing new transcript:', recognition.transcript);
+      lastProcessedTranscriptRef.current = recognition.transcript;
+      onVoiceInput(recognition.transcript.trim());
       recognition.resetTranscript();
     }
   }, [recognition.transcript, onVoiceInput, recognition]);
@@ -80,6 +87,15 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
       : "VIKI Neural System is now online and ready for interaction.";
     
     speech.speak(testMessage);
+  };
+
+  const handleMicToggle = () => {
+    if (recognition.isListening) {
+      recognition.stopListening();
+      lastProcessedTranscriptRef.current = '';
+    } else {
+      recognition.startListening();
+    }
   };
 
   return (
@@ -172,7 +188,7 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
             {recognition.isSupported && (
               <div className="flex gap-2">
                 <Button
-                  onClick={recognition.isListening ? recognition.stopListening : recognition.startListening}
+                  onClick={handleMicToggle}
                   className={`flex-1 font-mono ${
                     recognition.isListening 
                       ? 'bg-red-500/20 text-red-300 border-red-500/40 hover:bg-red-500/30' 
