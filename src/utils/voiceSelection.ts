@@ -33,19 +33,32 @@ export const findBestVoice = (voices: SpeechSynthesisVoice[], targetLanguage: st
       score += 50;
     }
     
-    // PRIORITY: Female voices for VIKI (applies to both languages)
-    const femaleIndicators = ['female', 'woman', 'girl', 'ioana', 'maria', 'ana', 'elena', 'carmen', 
-                             'susan', 'hazel', 'kate', 'emma', 'sarah', 'emily', 'sophie', 'alice', 'zira'];
-    const maleIndicators = ['male', 'man', 'boy', 'andrei', 'george', 'daniel', 'david', 'mark', 'paul'];
+    // CRITICAL: Strong preference for female voices
+    const femaleIndicators = [
+      'female', 'woman', 'girl', 'lady', 'fem',
+      // Romanian female names
+      'ioana', 'maria', 'ana', 'elena', 'carmen', 'alexandra', 'cristina', 'mihaela', 'diana', 'laura',
+      // English female names  
+      'susan', 'hazel', 'kate', 'emma', 'sarah', 'emily', 'sophie', 'alice', 'zira', 'samantha', 'victoria', 'fiona'
+    ];
+    
+    const maleIndicators = [
+      'male', 'man', 'boy', 'gentleman', 
+      // Romanian male names
+      'andrei', 'george', 'daniel', 'alexandru', 'mihai', 'stefan', 'cristian', 'adrian', 'florin',
+      // English male names
+      'david', 'mark', 'paul', 'james', 'thomas', 'alex', 'michael', 'robert'
+    ];
     
     const isFemale = femaleIndicators.some(indicator => voiceName.includes(indicator));
     const isMale = maleIndicators.some(indicator => voiceName.includes(indicator));
     
     if (isFemale) {
-      score += 150; // Strong preference for female voices
-      console.log(`🎀 Female voice detected: ${voice.name}`);
+      score += 300; // VERY strong preference for female voices
+      console.log(`🎀 Female voice detected: ${voice.name} - BONUS +300`);
     } else if (isMale) {
-      score -= 50; // Penalize clearly male voices
+      score -= 200; // Heavy penalty for clearly male voices
+      console.log(`👨 Male voice detected: ${voice.name} - PENALTY -200`);
     }
     
     // Bonus for local/native voices
@@ -82,21 +95,30 @@ export const findBestVoice = (voices: SpeechSynthesisVoice[], targetLanguage: st
       
       // Special bonus for good British female voices
       if (voiceName.includes('hazel') || voiceName.includes('susan') || 
-          voiceName.includes('kate') || voiceName.includes('zira')) {
-        score += 200; // Extra bonus for known good British female voices
+          voiceName.includes('kate') || voiceName.includes('zira') ||
+          voiceName.includes('fiona') || voiceName.includes('samantha')) {
+        score += 250; // Extra bonus for known good British female voices
       }
     }
     
     // For Romanian, prefer Romanian voices
     if (langCode === 'ro') {
-      if (voiceName.includes('andrei') || voiceName.includes('ioana') || 
-          voiceName.includes('romania') || voiceName.includes('romanian')) {
-        score += 100;
+      if (voiceName.includes('romania') || voiceName.includes('romanian')) {
+        score += 150;
       }
       
-      // Special bonus for female Romanian voices
-      if (voiceName.includes('ioana') || (voiceName.includes('romania') && isFemale)) {
-        score += 200; // Extra bonus for Romanian female voices
+      // CRITICAL: Heavy bonus for female Romanian voices
+      if (voiceName.includes('ioana')) {
+        score += 400; // Maximum bonus for Ioana (female Romanian voice)
+        console.log(`🌟 PERFECT MATCH: Ioana voice - BONUS +400`);
+      } else if ((voiceName.includes('romania') || voiceName.includes('romanian')) && isFemale) {
+        score += 350; // Very high bonus for other female Romanian voices
+      }
+      
+      // CRITICAL: Heavy penalty for male Romanian voices
+      if (voiceName.includes('andrei')) {
+        score -= 400; // Maximum penalty for Andrei (male Romanian voice)
+        console.log(`❌ AVOIDING: Andrei voice - PENALTY -400`);
       }
       
       // Penalize non-Romanian voices for Romanian text
@@ -118,20 +140,21 @@ export const findBestVoice = (voices: SpeechSynthesisVoice[], targetLanguage: st
     .filter(({ score }) => score > -500) // Filter out heavily penalized voices
     .sort((a, b) => b.score - a.score);
   
-  console.log('Top 5 voice candidates:');
-  scoredVoices.slice(0, 5).forEach(({ voice, score }) => {
-    const genderGuess = ['ioana', 'maria', 'ana', 'susan', 'hazel', 'kate', 'emma', 'sarah', 'zira']
+  console.log('=== TOP 10 VOICE CANDIDATES ===');
+  scoredVoices.slice(0, 10).forEach(({ voice, score }, index) => {
+    const genderGuess = ['ioana', 'maria', 'ana', 'susan', 'hazel', 'kate', 'emma', 'sarah', 'zira', 'fiona', 'samantha', 'victoria']
       .some(name => voice.name.toLowerCase().includes(name)) ? '👩 Female' : 
-      ['andrei', 'george', 'daniel', 'david', 'mark', 'paul']
+      ['andrei', 'george', 'daniel', 'david', 'mark', 'paul', 'james', 'thomas', 'alex', 'michael']
       .some(name => voice.name.toLowerCase().includes(name)) ? '👨 Male' : '❓ Unknown';
     
-    console.log(`- ${voice.name} (${voice.lang}) - Score: ${score}, ${genderGuess}, Local: ${voice.localService}, Default: ${voice.default}`);
+    const priority = index === 0 ? '🥇 SELECTED' : index === 1 ? '🥈 2nd' : index === 2 ? '🥉 3rd' : `${index + 1}th`;
+    console.log(`${priority}: ${voice.name} (${voice.lang}) - Score: ${score}, ${genderGuess}, Local: ${voice.localService}, Default: ${voice.default}`);
   });
   
   const bestVoice = scoredVoices[0]?.voice;
   
   if (bestVoice && scoredVoices[0].score > 0) {
-    console.log(`✅ Selected: ${bestVoice.name} (${bestVoice.lang}) - Score: ${scoredVoices[0].score}`);
+    console.log(`✅ FINAL SELECTION: ${bestVoice.name} (${bestVoice.lang}) - Score: ${scoredVoices[0].score}`);
     return bestVoice;
   }
   
