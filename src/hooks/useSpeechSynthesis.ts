@@ -40,10 +40,11 @@ export const useSpeechSynthesis = () => {
       .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
       .replace(/`(.*?)`/g, '$1') // Remove code markdown
       .replace(/#{1,6}\s/g, '') // Remove headers
-      .replace(/---+/g, '') // Remove horizontal rules
+      .replace(/-{3,}/g, '') // Remove horizontal rules
       .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Remove links, keep text
       
       // Remove special characters and emojis
+      // eslint-disable-next-line no-misleading-character-class
       .replace(/[🌳✨🎄🌟🎉🔧💡😊😄❌✅🧪📝⚡🎀👩👨❓]/g, '') // Remove emojis
       .replace(/[•·]/g, '') // Remove bullet points
       
@@ -62,7 +63,7 @@ export const useSpeechSynthesis = () => {
 
   const splitTextIntoChunks = (text: string): string[] => {
     // Split by sentences first, but handle multiple sentence endings
-    const sentences = text.match(/[^\.!?]+[\.!?]+/g) || [text];
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
     const chunks: string[] = [];
     let currentChunk = '';
     
