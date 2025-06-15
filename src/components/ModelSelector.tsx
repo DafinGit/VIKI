@@ -1,19 +1,26 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Cpu, Zap, Brain, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Cpu, Zap, Brain, Sparkles, Key, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ModelSelectorProps {
   modelProvider: 'deepseek' | 'gemini';
   onProviderChange: (provider: 'deepseek' | 'gemini') => void;
+  googleApiKey: string;
+  onGoogleApiKeyChange: (key: string) => void;
 }
 
 export const ModelSelector: React.FC<ModelSelectorProps> = ({
   modelProvider,
-  onProviderChange
+  onProviderChange,
+  googleApiKey,
+  onGoogleApiKeyChange
 }) => {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   return (
     <Card className="p-6 bg-black/40 backdrop-blur-md border border-cyan-500/30 shadow-lg shadow-cyan-500/5">
       <div className="flex items-center gap-3 mb-4">
@@ -45,7 +52,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             <span className="font-mono font-semibold text-green-300">GEMINI-2.0</span>
             <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/40 font-mono text-xs">
               <Brain className="w-3 h-3 mr-1" />
-              Direct API
+              OpenRouter
             </Badge>
           </div>
         </div>
@@ -64,10 +71,46 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         </div>
         <p className="text-gray-300 text-sm font-mono">
           {modelProvider === 'deepseek' 
-            ? 'Advanced reasoning model with enhanced chain-of-thought capabilities. Requires OpenRouter credits.'
-            : 'Latest Google Gemini 2.0 Flash Experimental model with enhanced multimodal capabilities and faster responses.'
+            ? 'Advanced reasoning model with enhanced chain-of-thought capabilities. Uses OpenRouter API.'
+            : 'Latest Google Gemini 2.0 Flash Experimental model. Routed through OpenRouter using your existing API key.'
           }
         </p>
+      </div>
+
+      {/* Advanced Options */}
+      <div className="mt-4">
+        <Button
+          variant="ghost"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="w-full justify-between text-cyan-300 hover:text-cyan-200 hover:bg-cyan-500/10"
+        >
+          <span className="font-mono text-sm">ADVANCED OPTIONS</span>
+          {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+        
+        {showAdvanced && (
+          <div className="mt-3 p-4 bg-gradient-to-r from-gray-900/40 to-black/40 border border-gray-700/30 rounded-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <Key className="w-4 h-4 text-blue-400" />
+              <span className="font-mono text-sm font-semibold text-blue-400">GOOGLE DIRECT API (FALLBACK)</span>
+            </div>
+            <div className="space-y-2">
+              <input
+                type="password"
+                placeholder="Enter Google Gemini API Key (optional)"
+                value={googleApiKey}
+                onChange={(e) => onGoogleApiKeyChange(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-900/60 border border-gray-600/40 rounded text-gray-300 placeholder-gray-500 focus:outline-none focus:border-blue-400 font-mono text-sm"
+              />
+              <p className="text-xs text-gray-400 font-mono">
+                Optional: Direct Google API key for fallback. Get one at{' '}
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">
+                  Google AI Studio
+                </a>
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </Card>
   );

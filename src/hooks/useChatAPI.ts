@@ -4,6 +4,7 @@ import { Message } from './useChatMessages';
 
 interface ChatAPIConfig {
   apiKey: string;
+  googleApiKey: string;
   currentModel: string;
   modelProvider: 'deepseek' | 'gemini';
   temperature: number;
@@ -31,30 +32,94 @@ export const useChatAPI = (config: ChatAPIConfig) => {
       let response;
 
       if (config.modelProvider === 'gemini') {
-        // Use Google Gemini API directly with 2.0 Flash Experimental
-        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${config.apiKey}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
-              ...messages.map(msg => ({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content }]
-              })),
-              {
-                role: 'user',
-                parts: [{ text: messageContent }]
-              }
-            ],
-            generationConfig: {
-              temperature: config.temperature,
-              maxOutputTokens: config.maxTokens,
+        // Try Google Direct API first if key is available, otherwise use OpenRouter
+        if (config.googleApiKey) {
+          console.log('🔄 Using Google Direct API');
+          try {
+            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${config.googleApiKey}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contents: [
+                  ...messages.map(msg => ({
+                    role: msg.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: msg.content }]
+                  })),
+                  {
+                    role: 'user',
+                    parts: [{ text: messageContent }]
+                  }
+                ],
+                generationConfig: {
+                  temperature: config.temperature,
+                  maxOutputTokens: config.maxTokens,
+                }
+              }),
+            });
+            
+            if (!response.ok) {
+              console.log('❌ Google Direct API failed, falling back to OpenRouter');
+              throw new Error('Google API failed');
             }
-          }),
-        });
+          } catch (error) {
+            console.log('🔄 Falling back to OpenRouter for Gemini');
+            response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${config.apiKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': window.location.origin,
+                'X-Title': 'Neural Interface Chat'
+              },
+              body: JSON.stringify({
+                model: config.currentModel,
+                messages: [
+                  ...messages.map(msg => ({
+                    role: msg.role,
+                    content: msg.content
+                  })),
+                  {
+                    role: 'user',
+                    content: messageContent
+                  }
+                ],
+                temperature: config.temperature,
+                max_tokens: config.maxTokens,
+              }),
+            });
+          }
+        } else {
+          console.log('🔄 Using OpenRouter for Gemini (no Google key provided)');
+          // Use OpenRouter for Gemini
+          response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${config.apiKey}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': window.location.origin,
+              'X-Title': 'Neural Interface Chat'
+            },
+            body: JSON.stringify({
+              model: config.currentModel,
+              messages: [
+                ...messages.map(msg => ({
+                  role: msg.role,
+                  content: msg.content
+                })),
+                {
+                  role: 'user',
+                  content: messageContent
+                }
+              ],
+              temperature: config.temperature,
+              max_tokens: config.maxTokens,
+            }),
+          });
+        }
       } else {
+        console.log('🔄 Using OpenRouter for DeepSeek');
         // Use OpenRouter API for DeepSeek
         response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
@@ -92,7 +157,9 @@ export const useChatAPI = (config: ChatAPIConfig) => {
 
       let assistantMessage: Message;
 
-      if (config.modelProvider === 'gemini') {
+      // Check if this is a Google Direct API response or OpenRouter response
+      if (data.candidates && config.modelProvider === 'gemini' && config.googleApiKey) {
+        // Google Direct API response format
         if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
           assistantMessage = {
             role: 'assistant',
@@ -101,9 +168,10 @@ export const useChatAPI = (config: ChatAPIConfig) => {
             id: generateMessageId()
           };
         } else {
-          throw new Error('Invalid response format from Gemini API');
+          throw new Error('Invalid response format from Google API');
         }
       } else {
+        // OpenRouter response format (for both DeepSeek and Gemini)
         if (data.choices?.[0]?.message?.content) {
           assistantMessage = {
             role: 'assistant',
@@ -122,7 +190,7 @@ export const useChatAPI = (config: ChatAPIConfig) => {
       console.error('❌ Chat error:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: `❌ **Neural Interface Error**\n\nError: ${error.message}\n\nPlease check your API key and try again.`,
+        content: `❌ **Neural Interface Error**\n\nError: ${error.message}\n\nPlease check your API keys and try again.`,
         timestamp: new Date(),
         id: generateMessageId()
       };

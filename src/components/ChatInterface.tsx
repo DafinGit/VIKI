@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
@@ -20,11 +19,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const [maxTokens, setMaxTokens] = useState(8000);
   const [input, setInput] = useState('');
   const [showThinking, setShowThinking] = useState(true);
+  const [googleApiKey, setGoogleApiKey] = useState(localStorage.getItem('google-api-key') || '');
 
   const { messages, messagesEndRef, addMessage, clearMessages, generateMessageId } = useChatMessages();
   
   const { isLoading, sendMessage } = useChatAPI({
     apiKey,
+    googleApiKey,
     currentModel,
     modelProvider,
     temperature,
@@ -34,10 +35,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const handleModelProviderChange = (provider: 'deepseek' | 'gemini') => {
     setModelProvider(provider);
     if (provider === 'gemini') {
-      setCurrentModel('gemini-2.0-flash-exp');
+      setCurrentModel('google/gemini-2.0-flash-exp');
     } else {
       setCurrentModel('deepseek/deepseek-r1');
     }
+  };
+
+  const handleGoogleApiKeyChange = (key: string) => {
+    setGoogleApiKey(key);
+    localStorage.setItem('google-api-key', key);
   };
 
   const handleSendMessage = async (messageText?: string) => {
@@ -86,6 +92,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
       <ModelSelector 
         modelProvider={modelProvider}
         onProviderChange={handleModelProviderChange}
+        googleApiKey={googleApiKey}
+        onGoogleApiKeyChange={handleGoogleApiKeyChange}
       />
 
       <SpeechControls 
