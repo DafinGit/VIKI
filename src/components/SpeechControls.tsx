@@ -20,6 +20,7 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
   const speech = useSpeechSynthesis();
   const recognition = useSpeechRecognition();
   const lastProcessedTranscriptRef = React.useRef<string>('');
+  const speechEndTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {
     // Only process new transcripts to prevent duplicates
@@ -35,11 +36,22 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
     }
   }, [recognition.transcript, onVoiceInput, recognition, speech.isSpeaking]);
 
-  // Stop listening when AI starts speaking to prevent feedback loop
+  // Stop listening when AI starts speaking, restart when it stops
   React.useEffect(() => {
     if (speech.isSpeaking && recognition.isListening) {
       console.log('AI is speaking, temporarily stopping voice recognition');
       recognition.stopListening();
+    } else if (!speech.isSpeaking && !recognition.isListening) {
+      // Clear any existing timeout
+      if (speechEndTimeoutRef.current) {
+        clearTimeout(speechEndTimeoutRef.current);
+      }
+      
+      // Restart listening after a short delay when AI stops speaking
+      speechEndTimeoutRef.current = setTimeout(() => {
+        console.log('AI finished speaking, restarting voice recognition');
+        recognition.startListening();
+      }, 1500); // Wait 1.5 seconds after AI stops speaking
     }
   }, [speech.isSpeaking, recognition]);
 
@@ -56,12 +68,24 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
     if (recognition.isListening) {
       recognition.stopListening();
       lastProcessedTranscriptRef.current = '';
+      if (speechEndTimeoutRef.current) {
+        clearTimeout(speechEndTimeoutRef.current);
+      }
     } else {
       // Don't start listening if AI is currently speaking
       if (!speech.isSpeaking) {
         recognition.startListening();
       }
     }
+  };
+
+  const handleTestVoice = () => {
+    const language = speech.config.language;
+    const testMessage = language === 'ro-RO' 
+      ? "Salut! Sistemul neural VIKI este acum online și pregătit pentru conversație în limba română."
+      : "Hello! VIKI Neural System is now online and ready for interaction.";
+    
+    speech.speak(testMessage);
   };
 
   return (
@@ -72,7 +96,7 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
             <Volume2 className="w-5 h-5 text-cyan-400" />
             <span className="text-white font-medium font-mono">NEURAL VOICE INTERFACE</span>
             <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
-              I, ROBOT MODE
+              ROMANIAN MODE
             </Badge>
           </div>
           <div className="flex items-center gap-2">
@@ -101,7 +125,7 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
             <VoiceControls
               isSpeaking={speech.isSpeaking}
               currentLanguage={speech.config.language}
-              onTestVoice={() => speech.speak("Test message")}
+              onTestVoice={handleTestVoice}
               onStopSpeech={speech.stop}
             />
 

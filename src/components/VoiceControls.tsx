@@ -19,33 +19,33 @@ export const VoiceControls: React.FC<VoiceControlsProps> = ({
 }) => {
   const testVoice = () => {
     const language = supportedLanguages.find(lang => lang.code === currentLanguage);
-    const testMessage = language?.code.startsWith('en') 
-      ? "VIKI Neural System is now online and ready for interaction."
+    const testMessage = language?.code === 'ro-RO' 
+      ? "Salut! Sistemul neural VIKI este acum online și pregătit pentru conversație în limba română."
+      : language?.code.startsWith('en') 
+      ? "Hello! VIKI Neural System is now online and ready for interaction."
       : language?.code === 'es-ES' 
-      ? "El Sistema Neural VIKI está ahora en línea y listo para la interacción."
+      ? "¡Hola! El Sistema Neural VIKI está ahora en línea y listo para la interacción."
       : language?.code === 'fr-FR'
-      ? "Le Système Neural VIKI est maintenant en ligne et prêt pour l'interaction."
+      ? "Bonjour! Le Système Neural VIKI est maintenant en ligne et prêt pour l'interaction."
       : language?.code === 'de-DE'
-      ? "Das VIKI Neural System ist jetzt online und bereit für die Interaktion."
+      ? "Hallo! Das VIKI Neural System ist jetzt online und bereit für die Interaktion."
       : language?.code === 'it-IT'
-      ? "Il Sistema Neurale VIKI è ora online e pronto per l'interazione."
+      ? "Ciao! Il Sistema Neurale VIKI è ora online e pronto per l'interazione."
       : language?.code === 'pt-BR'
-      ? "O Sistema Neural VIKI está agora online e pronto para interação."
-      : language?.code === 'ro-RO'
-      ? "Sistemul Neural VIKI este acum online și gata pentru interacțiune."
+      ? "Olá! O Sistema Neural VIKI está agora online e pronto para interação."
       : language?.code === 'ru-RU'
-      ? "Нейронная система ВИКИ теперь онлайн и готова к взаимодействию."
+      ? "Привет! Нейронная система ВИКИ теперь онлайн и готова к взаимодействию."
       : language?.code === 'ja-JP'
-      ? "VIKIニューラルシステムがオンラインになり、対話の準備が整いました。"
+      ? "こんにちは！VIKIニューラルシステムがオンラインになり、対話の準備が整いました。"
       : language?.code === 'ko-KR'
-      ? "VIKI 신경 시스템이 온라인 상태이며 상호 작용할 준비가 되었습니다."
+      ? "안녕하세요! VIKI 신경 시스템이 온라인 상태이며 상호 작용할 준비가 되었습니다."
       : language?.code === 'zh-CN'
-      ? "VIKI神经系统现已上线，准备进行交互。"
+      ? "你好！VIKI神经系统现已上线，准备进行交互。"
       : language?.code === 'ar-SA'
-      ? "نظام VIKI العصبي متصل الآن وجاهز للتفاعل."
+      ? "مرحبا! نظام VIKI العصبي متصل الآن وجاهز للتفاعل."
       : language?.code === 'hi-IN'
-      ? "VIKI न्यूरल सिस्टम अब ऑनलाइन है और बातचीत के लिए तैयार है।"
-      : "VIKI Neural System is now online and ready for interaction.";
+      ? "नमस्ते! VIKI न्यूरल सिस्टम अब ऑनलाइन है और बातचीत के लिए तैयार है।"
+      : "Hello! VIKI Neural System is now online and ready for interaction.";
     
     onTestVoice();
   };
