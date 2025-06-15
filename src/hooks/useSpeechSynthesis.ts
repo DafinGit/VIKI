@@ -22,7 +22,23 @@ export const useSpeechSynthesis = () => {
   useEffect(() => {
     const loadVoices = () => {
       const availableVoices = speechSynthesis.getVoices();
-      console.log('Available voices:', availableVoices.map(v => `${v.name} (${v.lang}) - Local: ${v.localService}, Default: ${v.default}`));
+      console.log('=== VOICE ANALYSIS ===');
+      console.log('Total voices found:', availableVoices.length);
+      
+      // Group voices by language for better analysis
+      const voicesByLang = availableVoices.reduce((acc, voice) => {
+        const lang = voice.lang.split('-')[0];
+        if (!acc[lang]) acc[lang] = [];
+        acc[lang].push(voice);
+        return acc;
+      }, {} as Record<string, SpeechSynthesisVoice[]>);
+      
+      Object.entries(voicesByLang).forEach(([lang, voices]) => {
+        console.log(`${lang.toUpperCase()} voices:`, voices.map(v => 
+          `${v.name} (${v.lang}) - Local: ${v.localService}, Default: ${v.default}`
+        ));
+      });
+      
       setVoices(availableVoices);
     };
 
@@ -40,93 +56,92 @@ export const useSpeechSynthesis = () => {
       return null;
     }
 
-    // Extract language code (e.g., 'en' from 'en-US')
-    const langCode = targetLanguage.split('-')[0];
+    const langCode = targetLanguage.split('-')[0].toLowerCase();
+    const regionCode = targetLanguage.split('-')[1]?.toLowerCase();
     
-    console.log(`Finding best voice for language: ${targetLanguage} (${langCode})`);
-    console.log('Available voices for analysis:', voices.map(v => `${v.name} (${v.lang}) - Local: ${v.localService}`));
+    console.log(`=== FINDING VOICE FOR ${targetLanguage} ===`);
+    console.log(`Language code: ${langCode}, Region: ${regionCode || 'any'}`);
     
-    // Priority 1: Exact language match with local/native voice
-    let selectedVoice = voices.find(voice => 
-      voice.lang.toLowerCase() === targetLanguage.toLowerCase() && voice.localService
-    );
-    
-    if (selectedVoice) {
-      console.log(`Found exact local match: ${selectedVoice.name} (${selectedVoice.lang})`);
-      return selectedVoice;
-    }
-
-    // Priority 2: Exact language match (any voice)
-    selectedVoice = voices.find(voice => 
-      voice.lang.toLowerCase() === targetLanguage.toLowerCase()
-    );
-    
-    if (selectedVoice) {
-      console.log(`Found exact match: ${selectedVoice.name} (${selectedVoice.lang})`);
-      return selectedVoice;
-    }
-
-    // Priority 3: Same language code with local voice
-    selectedVoice = voices.find(voice => 
-      voice.lang.toLowerCase().startsWith(langCode.toLowerCase() + '-') && voice.localService
-    );
-    
-    if (selectedVoice) {
-      console.log(`Found local language code match: ${selectedVoice.name} (${selectedVoice.lang})`);
-      return selectedVoice;
-    }
-
-    // Priority 4: Same language code (any voice) - but avoid voices that might have wrong accents
-    const languageMatches = voices.filter(voice => 
-      voice.lang.toLowerCase().startsWith(langCode.toLowerCase() + '-')
-    );
-    
-    // For English, prefer voices that don't have "Romania" or similar in the name
-    if (langCode.toLowerCase() === 'en' && languageMatches.length > 0) {
-      const nativeEnglishVoice = languageMatches.find(voice => 
-        !voice.name.toLowerCase().includes('romania') && 
-        !voice.name.toLowerCase().includes('romanian')
-      );
+    // Create scoring system for voice selection
+    const scoreVoice = (voice: SpeechSynthesisVoice) => {
+      let score = 0;
+      const voiceLang = voice.lang.toLowerCase();
+      const voiceLangCode = voiceLang.split('-')[0];
+      const voiceRegion = voiceLang.split('-')[1];
+      const voiceName = voice.name.toLowerCase();
       
-      if (nativeEnglishVoice) {
-        console.log(`Found native English voice: ${nativeEnglishVoice.name} (${nativeEnglishVoice.lang})`);
-        return nativeEnglishVoice;
+      // Exact language and region match
+      if (voiceLang === targetLanguage.toLowerCase()) {
+        score += 100;
       }
+      // Same language code
+      else if (voiceLangCode === langCode) {
+        score += 50;
+      }
+      
+      // Bonus for local/native voices
+      if (voice.localService) {
+        score += 30;
+      }
+      
+      // Bonus for default voices
+      if (voice.default) {
+        score += 20;
+      }
+      
+      // Penalties for potentially wrong accents
+      if (langCode === 'en') {
+        // Penalize English voices that might have wrong accents
+        if (voiceName.includes('romania') || voiceName.includes('romanian') || 
+            voiceName.includes('india') && !targetLanguage.includes('IN')) {
+          score -= 50;
+        }
+        
+        // Prefer specific regional voices
+        if (regionCode === 'us' && (voiceName.includes('united states') || voiceName.includes('us') || voiceName.includes('american'))) {
+          score += 25;
+        }
+        if (regionCode === 'gb' && (voiceName.includes('british') || voiceName.includes('uk') || voiceName.includes('england'))) {
+          score += 25;
+        }
+      }
+      
+      // Prefer voices with clear regional indicators
+      if (regionCode && voiceRegion === regionCode) {
+        score += 15;
+      }
+      
+      return score;
+    };
+    
+    // Score all voices and find the best match
+    const scoredVoices = voices.map(voice => ({
+      voice,
+      score: scoreVoice(voice)
+    })).sort((a, b) => b.score - a.score);
+    
+    console.log('Top 5 voice candidates:');
+    scoredVoices.slice(0, 5).forEach(({ voice, score }) => {
+      console.log(`- ${voice.name} (${voice.lang}) - Score: ${score}, Local: ${voice.localService}, Default: ${voice.default}`);
+    });
+    
+    const bestVoice = scoredVoices[0]?.voice;
+    
+    if (bestVoice) {
+      console.log(`✅ Selected: ${bestVoice.name} (${bestVoice.lang}) - Score: ${scoredVoices[0].score}`);
+      return bestVoice;
     }
     
-    selectedVoice = languageMatches[0];
-    if (selectedVoice) {
-      console.log(`Found language code match: ${selectedVoice.name} (${selectedVoice.lang})`);
-      return selectedVoice;
-    }
-
-    // Priority 5: Base language code (without region)
-    selectedVoice = voices.find(voice => 
-      voice.lang.toLowerCase() === langCode.toLowerCase()
-    );
-    
-    if (selectedVoice) {
-      console.log(`Found base language match: ${selectedVoice.name} (${selectedVoice.lang})`);
-      return selectedVoice;
-    }
-
-    // Priority 6: Default voice for the target language
-    selectedVoice = voices.find(voice => 
-      voice.lang.toLowerCase().startsWith(langCode.toLowerCase()) && voice.default
-    );
-    
-    if (selectedVoice) {
-      console.log(`Found default voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-      return selectedVoice;
-    }
-
-    // Fallback: Use system default voice
-    console.log('No suitable voice found, using system default');
-    return voices.find(voice => voice.default) || voices[0] || null;
+    console.log('❌ No suitable voice found');
+    return null;
   };
 
   const speak = (text: string) => {
     if (!text.trim()) return;
+
+    console.log(`\n=== SPEAKING TEXT ===`);
+    console.log(`Text: "${text}"`);
+    console.log(`Target language: ${config.language}`);
 
     // Stop any current speech
     speechSynthesis.cancel();
@@ -139,9 +154,10 @@ export const useSpeechSynthesis = () => {
 
     if (selectedVoice) {
       utterance.voice = selectedVoice;
-      console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang}) - Local: ${selectedVoice.localService} for language: ${config.language}`);
+      console.log(`🎵 Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+      console.log(`Voice details: Local=${selectedVoice.localService}, Default=${selectedVoice.default}`);
     } else {
-      console.log(`No specific voice found for ${config.language}, using browser default`);
+      console.log(`⚠️ No specific voice found for ${config.language}, using browser default`);
     }
 
     utterance.rate = config.rate;
@@ -149,10 +165,20 @@ export const useSpeechSynthesis = () => {
     utterance.volume = config.volume;
     utterance.lang = config.language;
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
+    console.log(`Speech settings: Rate=${config.rate}, Pitch=${config.pitch}, Volume=${config.volume}`);
+
+    utterance.onstart = () => {
+      console.log('🔊 Speech started');
+      setIsSpeaking(true);
+    };
+    
+    utterance.onend = () => {
+      console.log('🔇 Speech ended');
+      setIsSpeaking(false);
+    };
+    
     utterance.onerror = (event) => {
-      console.error('Speech synthesis error:', event);
+      console.error('❌ Speech synthesis error:', event);
       setIsSpeaking(false);
     };
 
