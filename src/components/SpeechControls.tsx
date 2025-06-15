@@ -21,13 +21,14 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
   const recognition = useSpeechRecognition();
   const lastProcessedTranscriptRef = React.useRef<string>('');
   const speechEndTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const wasListeningBeforeSpeechRef = React.useRef<boolean>(false);
 
   React.useEffect(() => {
     // Only process new transcripts to prevent duplicates
     if (recognition.transcript && 
         recognition.transcript !== lastProcessedTranscriptRef.current &&
         recognition.transcript.trim().length > 0 &&
-        !speech.isSpeaking) { // Don't process if AI is currently speaking
+        !speech.isSpeaking) {
       
       console.log('Processing new transcript:', recognition.transcript);
       lastProcessedTranscriptRef.current = recognition.transcript;
@@ -40,8 +41,9 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
   React.useEffect(() => {
     if (speech.isSpeaking && recognition.isListening) {
       console.log('AI is speaking, temporarily stopping voice recognition');
+      wasListeningBeforeSpeechRef.current = true;
       recognition.stopListening();
-    } else if (!speech.isSpeaking && !recognition.isListening) {
+    } else if (!speech.isSpeaking && wasListeningBeforeSpeechRef.current) {
       // Clear any existing timeout
       if (speechEndTimeoutRef.current) {
         clearTimeout(speechEndTimeoutRef.current);
@@ -50,8 +52,9 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
       // Restart listening after a short delay when AI stops speaking
       speechEndTimeoutRef.current = setTimeout(() => {
         console.log('AI finished speaking, restarting voice recognition');
+        wasListeningBeforeSpeechRef.current = false;
         recognition.startListening();
-      }, 1500); // Wait 1.5 seconds after AI stops speaking
+      }, 1000);
     }
   }, [speech.isSpeaking, recognition]);
 
@@ -68,6 +71,7 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
     if (recognition.isListening) {
       recognition.stopListening();
       lastProcessedTranscriptRef.current = '';
+      wasListeningBeforeSpeechRef.current = false;
       if (speechEndTimeoutRef.current) {
         clearTimeout(speechEndTimeoutRef.current);
       }
