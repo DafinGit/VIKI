@@ -5,20 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Volume2, VolumeX, Mic, MicOff, Camera, CameraOff } from 'lucide-react';
+import { Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 
 interface SpeechControlsProps {
   onVoiceInput: (text: string) => void;
-  isVideoEnabled: boolean;
-  onToggleVideo: () => void;
 }
 
 export const SpeechControls: React.FC<SpeechControlsProps> = ({
-  onVoiceInput,
-  isVideoEnabled,
-  onToggleVideo
+  onVoiceInput
 }) => {
   const speech = useSpeechSynthesis();
   const recognition = useSpeechRecognition();
@@ -32,6 +28,7 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
     { code: 'de-DE', name: 'German', flag: '🇩🇪' },
     { code: 'it-IT', name: 'Italian', flag: '🇮🇹' },
     { code: 'pt-BR', name: 'Portuguese', flag: '🇧🇷' },
+    { code: 'ro-RO', name: 'Romanian', flag: '🇷🇴' },
     { code: 'ru-RU', name: 'Russian', flag: '🇷🇺' },
     { code: 'ja-JP', name: 'Japanese', flag: '🇯🇵' },
     { code: 'ko-KR', name: 'Korean', flag: '🇰🇷' },
@@ -44,14 +41,23 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
     // Only process new transcripts to prevent duplicates
     if (recognition.transcript && 
         recognition.transcript !== lastProcessedTranscriptRef.current &&
-        recognition.transcript.trim().length > 0) {
+        recognition.transcript.trim().length > 0 &&
+        !speech.isSpeaking) { // Don't process if AI is currently speaking
       
       console.log('Processing new transcript:', recognition.transcript);
       lastProcessedTranscriptRef.current = recognition.transcript;
       onVoiceInput(recognition.transcript.trim());
       recognition.resetTranscript();
     }
-  }, [recognition.transcript, onVoiceInput, recognition]);
+  }, [recognition.transcript, onVoiceInput, recognition, speech.isSpeaking]);
+
+  // Stop listening when AI starts speaking to prevent feedback loop
+  React.useEffect(() => {
+    if (speech.isSpeaking && recognition.isListening) {
+      console.log('AI is speaking, temporarily stopping voice recognition');
+      recognition.stopListening();
+    }
+  }, [speech.isSpeaking, recognition]);
 
   const handleLanguageChange = (languageCode: string) => {
     speech.setConfig(prev => ({ ...prev, language: languageCode }));
@@ -72,6 +78,8 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
       ? "Il Sistema Neurale VIKI è ora online e pronto per l'interazione."
       : language?.code === 'pt-BR'
       ? "O Sistema Neural VIKI está agora online e pronto para interação."
+      : language?.code === 'ro-RO'
+      ? "Sistemul Neural VIKI este acum online și gata pentru interacțiune."
       : language?.code === 'ru-RU'
       ? "Нейронная система ВИКИ теперь онлайн и готова к взаимодействию."
       : language?.code === 'ja-JP'
@@ -94,7 +102,10 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
       recognition.stopListening();
       lastProcessedTranscriptRef.current = '';
     } else {
-      recognition.startListening();
+      // Don't start listening if AI is currently speaking
+      if (!speech.isSpeaking) {
+        recognition.startListening();
+      }
     }
   };
 
@@ -189,29 +200,20 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
               <div className="flex gap-2">
                 <Button
                   onClick={handleMicToggle}
+                  disabled={speech.isSpeaking}
                   className={`flex-1 font-mono ${
                     recognition.isListening 
                       ? 'bg-red-500/20 text-red-300 border-red-500/40 hover:bg-red-500/30' 
+                      : speech.isSpeaking
+                      ? 'bg-gray-500/20 text-gray-400 border-gray-500/40'
                       : 'bg-blue-500/20 text-blue-300 border-blue-500/40 hover:bg-blue-500/30'
                   }`}
                 >
                   {recognition.isListening ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
-                  {recognition.isListening ? 'STOP LISTENING' : 'START LISTENING'}
+                  {speech.isSpeaking ? 'AI SPEAKING...' : recognition.isListening ? 'STOP LISTENING' : 'START LISTENING'}
                 </Button>
               </div>
             )}
-
-            <Button
-              onClick={onToggleVideo}
-              className={`w-full font-mono ${
-                isVideoEnabled 
-                  ? 'bg-green-500/20 text-green-300 border-green-500/40 hover:bg-green-500/30' 
-                  : 'bg-gray-500/20 text-gray-300 border-gray-500/40 hover:bg-gray-500/30'
-              }`}
-            >
-              {isVideoEnabled ? <Camera className="w-4 h-4 mr-2" /> : <CameraOff className="w-4 h-4 mr-2" />}
-              {isVideoEnabled ? 'DISABLE CAMERA' : 'ENABLE CAMERA'}
-            </Button>
 
             {recognition.interimTranscript && (
               <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 text-xs font-mono">

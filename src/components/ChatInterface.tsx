@@ -4,7 +4,6 @@ import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { ChatControls } from './ChatControls';
 import { SpeechControls } from './SpeechControls';
-import { CameraFeed } from './CameraFeed';
 import { NeuralInterfaceHeader } from './NeuralInterfaceHeader';
 import { useChatMessages } from '@/hooks/useChatMessages';
 import { useChatAPI } from '@/hooks/useChatAPI';
@@ -19,7 +18,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const [maxTokens, setMaxTokens] = useState(8000);
   const [input, setInput] = useState('');
   const [showThinking, setShowThinking] = useState(true);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(false);
 
   const { messages, messagesEndRef, addMessage, clearMessages, generateMessageId } = useChatMessages();
   
@@ -69,26 +67,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
     setShowThinking(prev => !prev);
   };
 
-  const toggleVideo = () => {
-    setIsVideoEnabled(prev => !prev);
-  };
-
   return (
     <div className="space-y-6">
       <NeuralInterfaceHeader />
 
       <SpeechControls 
         onVoiceInput={handleVoiceInput}
-        isVideoEnabled={isVideoEnabled}
-        onToggleVideo={toggleVideo}
       />
-
-      {isVideoEnabled && (
-        <CameraFeed 
-          isEnabled={isVideoEnabled}
-          onToggle={toggleVideo}
-        />
-      )}
 
       <ChatControls
         showThinking={showThinking}
