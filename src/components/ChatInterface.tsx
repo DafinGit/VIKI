@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +14,7 @@ interface Message {
   content: string;
   timestamp: Date;
   thinking?: string;
+  id: string; // Add unique ID to prevent duplicate speech
 }
 
 interface ChatInterfaceProps {
@@ -30,6 +30,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const [input, setInput] = useState('');
   const [showThinking, setShowThinking] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  const [lastSpokenMessageId, setLastSpokenMessageId] = useState<string>(''); // Track last spoken message
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const speech = useSpeechSynthesis();
 
@@ -44,11 +45,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-speak assistant responses
+  // Auto-speak assistant responses with duplicate prevention
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
-      // Clean the content for speech (remove markdown and formatting)
+    if (lastMessage && 
+        lastMessage.role === 'assistant' && 
+        lastMessage.content && 
+        lastMessage.id !== lastSpokenMessageId) {
+      
+      // Stop any current speech first
+      speech.stop();
+      
+      // Clean the content for speech
       const cleanContent = lastMessage.content
         .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
         .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
@@ -59,12 +67,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
         .trim();
       
       if (cleanContent && cleanContent.length > 0) {
+        setLastSpokenMessageId(lastMessage.id);
         setTimeout(() => {
           speech.speak(cleanContent);
-        }, 500); // Small delay to ensure UI updates first
+        }, 500);
       }
     }
-  }, [messages, speech]);
+  }, [messages, speech, lastSpokenMessageId]);
+
+  const generateMessageId = () => {
+    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+  };
 
   const handleSendMessage = async (messageText?: string) => {
     const messageContent = messageText || input.trim();
@@ -73,12 +86,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
     const userMessage: Message = {
       role: 'user',
       content: messageContent,
-      timestamp: new Date()
+      timestamp: new Date(),
+      id: generateMessageId()
     };
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     if (!messageText) setInput('');
+
+    // Stop any current speech when sending a new message
+    speech.stop();
 
     try {
       console.log('=== SENDING CHAT MESSAGE ===');
@@ -123,7 +140,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
           role: 'assistant',
           content: data.choices[0].message.content,
           timestamp: new Date(),
-          thinking: data.choices[0].message.reasoning || undefined
+          thinking: data.choices[0].message.reasoning || undefined,
+          id: generateMessageId()
         };
 
         setMessages(prev => [...prev, assistantMessage]);
@@ -133,7 +151,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
       const errorMessage: Message = {
         role: 'assistant',
         content: `❌ **Neural Interface Error**\n\nError: ${error.message}\n\nPlease check your API key and try again.`,
-        timestamp: new Date()
+        timestamp: new Date(),
+        id: generateMessageId()
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -157,6 +176,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
 
   const clearMessages = () => {
     setMessages([]);
+    setLastSpokenMessageId(''); // Reset spoken message tracking
   };
 
   const toggleThinking = () => {
