@@ -20,6 +20,7 @@ export const useSpeechRecognition = () => {
 
   const recognitionRef = useRef<any>(null);
   const shouldBeListeningRef = useRef(false);
+  const isManuallyStoppedRef = useRef(false);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -43,11 +44,11 @@ export const useSpeechRecognition = () => {
         console.log('Speech recognition ended');
         setIsListening(false);
         
-        // Only auto-restart if we should be listening and we're not manually stopping
-        if (shouldBeListeningRef.current && config.continuous) {
+        // Only auto-restart if we should be listening and it wasn't manually stopped
+        if (shouldBeListeningRef.current && !isManuallyStoppedRef.current && config.continuous) {
           console.log('Auto-restarting speech recognition');
           setTimeout(() => {
-            if (shouldBeListeningRef.current && recognitionRef.current) {
+            if (shouldBeListeningRef.current && !isManuallyStoppedRef.current && recognitionRef.current) {
               try {
                 recognitionRef.current.start();
               } catch (error) {
@@ -86,13 +87,13 @@ export const useSpeechRecognition = () => {
         } else if (event.error === 'audio-capture') {
           console.error('Audio capture error - check microphone permissions');
           shouldBeListeningRef.current = false;
+          isManuallyStoppedRef.current = true;
           setIsListening(false);
         } else if (event.error === 'not-allowed') {
           console.error('Microphone access denied');
           shouldBeListeningRef.current = false;
+          isManuallyStoppedRef.current = true;
           setIsListening(false);
-        } else {
-          console.error('Other recognition error:', event.error);
         }
       };
     }
@@ -106,9 +107,11 @@ export const useSpeechRecognition = () => {
 
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
+      console.log('Starting speech recognition manually');
       setTranscript('');
       setInterimTranscript('');
       shouldBeListeningRef.current = true;
+      isManuallyStoppedRef.current = false;
       try {
         recognitionRef.current.start();
       } catch (error) {
@@ -118,10 +121,22 @@ export const useSpeechRecognition = () => {
   };
 
   const stopListening = () => {
+    console.log('Stopping speech recognition manually');
     shouldBeListeningRef.current = false;
+    isManuallyStoppedRef.current = true;
     if (recognitionRef.current && isListening) {
       recognitionRef.current.stop();
     }
+  };
+
+  const forceStop = () => {
+    console.log('Force stopping speech recognition');
+    shouldBeListeningRef.current = false;
+    isManuallyStoppedRef.current = true;
+    if (recognitionRef.current) {
+      recognitionRef.current.abort();
+    }
+    setIsListening(false);
   };
 
   const resetTranscript = () => {
@@ -138,6 +153,7 @@ export const useSpeechRecognition = () => {
     setConfig,
     startListening,
     stopListening,
+    forceStop,
     resetTranscript
   };
 };

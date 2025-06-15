@@ -20,7 +20,6 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
   const speech = useSpeechSynthesis();
   const recognition = useSpeechRecognition();
   const lastProcessedTranscriptRef = React.useRef<string>('');
-  const speechEndTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const wasListeningBeforeSpeechRef = React.useRef<boolean>(false);
 
   React.useEffect(() => {
@@ -37,24 +36,26 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
     }
   }, [recognition.transcript, onVoiceInput, recognition, speech.isSpeaking]);
 
-  // Stop listening when AI starts speaking, restart when it stops
+  // CRITICAL: Stop listening immediately when AI starts speaking
   React.useEffect(() => {
-    if (speech.isSpeaking && recognition.isListening) {
-      console.log('AI is speaking, temporarily stopping voice recognition');
-      wasListeningBeforeSpeechRef.current = true;
-      recognition.stopListening();
-    } else if (!speech.isSpeaking && wasListeningBeforeSpeechRef.current) {
-      // Clear any existing timeout
-      if (speechEndTimeoutRef.current) {
-        clearTimeout(speechEndTimeoutRef.current);
+    if (speech.isSpeaking) {
+      if (recognition.isListening) {
+        console.log('AI is speaking - FORCE STOPPING voice recognition');
+        wasListeningBeforeSpeechRef.current = true;
+        recognition.forceStop();
       }
-      
-      // Restart listening after a short delay when AI stops speaking
-      speechEndTimeoutRef.current = setTimeout(() => {
-        console.log('AI finished speaking, restarting voice recognition');
-        wasListeningBeforeSpeechRef.current = false;
-        recognition.startListening();
-      }, 1000);
+    } else if (!speech.isSpeaking && wasListeningBeforeSpeechRef.current) {
+      // Wait longer before restarting to ensure AI has completely finished
+      console.log('AI finished speaking, waiting before restart...');
+      const timeout = setTimeout(() => {
+        if (!speech.isSpeaking && wasListeningBeforeSpeechRef.current) {
+          console.log('Restarting voice recognition after AI speech');
+          wasListeningBeforeSpeechRef.current = false;
+          recognition.startListening();
+        }
+      }, 2000); // Increased delay to 2 seconds
+
+      return () => clearTimeout(timeout);
     }
   }, [speech.isSpeaking, recognition]);
 
@@ -72,18 +73,23 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
       recognition.stopListening();
       lastProcessedTranscriptRef.current = '';
       wasListeningBeforeSpeechRef.current = false;
-      if (speechEndTimeoutRef.current) {
-        clearTimeout(speechEndTimeoutRef.current);
-      }
     } else {
-      // Don't start listening if AI is currently speaking
+      // Only start if AI is not speaking
       if (!speech.isSpeaking) {
         recognition.startListening();
+      } else {
+        console.log('Cannot start listening - AI is currently speaking');
       }
     }
   };
 
   const handleTestVoice = () => {
+    // Force stop listening before testing voice
+    if (recognition.isListening) {
+      recognition.forceStop();
+      wasListeningBeforeSpeechRef.current = true;
+    }
+
     const language = speech.config.language;
     const testMessage = language === 'ro-RO' 
       ? "Salut! Sistemul neural VIKI este acum online și pregătit pentru conversație în limba română."
@@ -105,8 +111,8 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
           </div>
           <div className="flex items-center gap-2">
             {speech.isSpeaking && (
-              <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30 animate-pulse">
-                SPEAKING
+              <Badge variant="secondary" className="bg-red-500/20 text-red-300 border-red-500/30 animate-pulse">
+                AI SPEAKING - MIC DISABLED
               </Badge>
             )}
           </div>
