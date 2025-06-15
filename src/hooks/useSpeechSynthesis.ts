@@ -8,7 +8,7 @@ export const useSpeechSynthesis = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [config, setConfig] = useState<SpeechConfig>({
-    language: 'ro-RO',
+    language: 'en-GB', // Changed default to British English
     rate: 0.8,
     pitch: 1.0,
     volume: 0.9

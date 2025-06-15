@@ -14,20 +14,8 @@ interface LanguageSelectorProps {
 }
 
 const supportedLanguages: Language[] = [
-  { code: 'en-US', name: 'English (US)', flag: '🇺🇸' },
   { code: 'en-GB', name: 'English (UK)', flag: '🇬🇧' },
-  { code: 'es-ES', name: 'Spanish', flag: '🇪🇸' },
-  { code: 'fr-FR', name: 'French', flag: '🇫🇷' },
-  { code: 'de-DE', name: 'German', flag: '🇩🇪' },
-  { code: 'it-IT', name: 'Italian', flag: '🇮🇹' },
-  { code: 'pt-BR', name: 'Portuguese', flag: '🇧🇷' },
-  { code: 'ro-RO', name: 'Romanian', flag: '🇷🇴' },
-  { code: 'ru-RU', name: 'Russian', flag: '🇷🇺' },
-  { code: 'ja-JP', name: 'Japanese', flag: '🇯🇵' },
-  { code: 'ko-KR', name: 'Korean', flag: '🇰🇷' },
-  { code: 'zh-CN', name: 'Chinese (Simplified)', flag: '🇨🇳' },
-  { code: 'ar-SA', name: 'Arabic', flag: '🇸🇦' },
-  { code: 'hi-IN', name: 'Hindi', flag: '🇮🇳' }
+  { code: 'ro-RO', name: 'Romanian', flag: '🇷🇴' }
 ];
 
 export const LanguageSelector: React.FC<LanguageSelectorProps> = ({

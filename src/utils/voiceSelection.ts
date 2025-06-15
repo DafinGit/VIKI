@@ -19,6 +19,11 @@ export const findBestVoice = (voices: SpeechSynthesisVoice[], targetLanguage: st
     const voiceRegion = voiceLang.split('-')[1];
     const voiceName = voice.name.toLowerCase();
     
+    // Skip voices that are not Romanian or English
+    if (voiceLangCode !== 'ro' && voiceLangCode !== 'en') {
+      return -1000; // Heavily penalize non-supported languages
+    }
+    
     // Exact language and region match
     if (voiceLang === targetLanguage.toLowerCase()) {
       score += 100;
@@ -38,55 +43,60 @@ export const findBestVoice = (voices: SpeechSynthesisVoice[], targetLanguage: st
       score += 20;
     }
     
-    // CRITICAL: Filter out voices with wrong accent/region
+    // CRITICAL: For English, only allow British voices
     if (langCode === 'en') {
-      // Heavily penalize voices that might have Romanian or other foreign accents
+      // Heavily penalize non-British English voices
+      if (voiceName.includes('united states') || voiceName.includes('america') || 
+          voiceName.includes('australia') || voiceName.includes('canada') ||
+          voiceName.includes('india') || voiceName.includes('south africa')) {
+        score -= 200;
+      }
+      
+      // Heavily penalize voices with Romanian or other foreign accents
       if (voiceName.includes('romania') || voiceName.includes('romanian') || 
           voiceName.includes('andrei') || voiceName.includes('ioana')) {
-        score -= 200; // Heavy penalty
+        score -= 500; // Very heavy penalty
       }
       
-      // Penalize other potentially wrong accents for English
-      if (voiceName.includes('india') && !targetLanguage.includes('IN')) {
-        score -= 100;
+      // Bonus for clearly British voices
+      if (voiceName.includes('british') || voiceName.includes('uk') || 
+          voiceName.includes('england') || voiceName.includes('gb') ||
+          voiceRegion === 'gb') {
+        score += 100;
       }
       
-      // Bonus for clearly native English voices
-      if (voiceName.includes('david') || voiceName.includes('mark') || 
-          voiceName.includes('zira') || voiceName.includes('hazel') ||
-          voiceName.includes('susan') || voiceName.includes('george')) {
+      // Bonus for common British voice names
+      if (voiceName.includes('hazel') || voiceName.includes('george') || 
+          voiceName.includes('susan') || voiceName.includes('daniel')) {
         score += 50;
-      }
-      
-      // Prefer specific regional voices
-      if (regionCode === 'us' && (voiceName.includes('united states') || voiceName.includes('us') || voiceName.includes('american'))) {
-        score += 25;
-      }
-      if (regionCode === 'gb' && (voiceName.includes('british') || voiceName.includes('uk') || voiceName.includes('england'))) {
-        score += 25;
       }
     }
     
     // For Romanian, prefer Romanian voices
     if (langCode === 'ro') {
-      if (voiceName.includes('andrei') || voiceName.includes('ioana') || voiceName.includes('romania')) {
-        score += 50;
+      if (voiceName.includes('andrei') || voiceName.includes('ioana') || 
+          voiceName.includes('romania') || voiceName.includes('romanian')) {
+        score += 100;
       }
-    }
-    
-    // Prefer voices with clear regional indicators
-    if (regionCode && voiceRegion === regionCode) {
-      score += 15;
+      
+      // Penalize non-Romanian voices for Romanian text
+      if (!voiceName.includes('romania') && !voiceName.includes('romanian') && 
+          !voiceName.includes('andrei') && !voiceName.includes('ioana')) {
+        score -= 100;
+      }
     }
     
     return score;
   };
   
   // Score all voices and find the best match
-  const scoredVoices = voices.map(voice => ({
-    voice,
-    score: scoreVoice(voice)
-  })).sort((a, b) => b.score - a.score);
+  const scoredVoices = voices
+    .map(voice => ({
+      voice,
+      score: scoreVoice(voice)
+    }))
+    .filter(({ score }) => score > -500) // Filter out heavily penalized voices
+    .sort((a, b) => b.score - a.score);
   
   console.log('Top 5 voice candidates:');
   scoredVoices.slice(0, 5).forEach(({ voice, score }) => {
@@ -105,11 +115,18 @@ export const findBestVoice = (voices: SpeechSynthesisVoice[], targetLanguage: st
 };
 
 export const logVoiceAnalysis = (voices: SpeechSynthesisVoice[]) => {
-  console.log('=== VOICE ANALYSIS ===');
-  console.log('Total voices found:', voices.length);
+  console.log('=== VOICE ANALYSIS (Romanian & English GB Only) ===');
   
-  // Group voices by language for better analysis
-  const voicesByLang = voices.reduce((acc, voice) => {
+  // Filter to only show Romanian and English voices
+  const relevantVoices = voices.filter(voice => {
+    const langCode = voice.lang.split('-')[0].toLowerCase();
+    return langCode === 'ro' || langCode === 'en';
+  });
+  
+  console.log('Total relevant voices found:', relevantVoices.length);
+  
+  // Group voices by language
+  const voicesByLang = relevantVoices.reduce((acc, voice) => {
     const lang = voice.lang.split('-')[0];
     if (!acc[lang]) acc[lang] = [];
     acc[lang].push(voice);
