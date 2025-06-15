@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { detectTextLanguage } from '@/utils/languageDetection';
 import { findBestVoice, logVoiceAnalysis } from '@/utils/voiceSelection';
@@ -46,100 +45,61 @@ export const useSpeechSynthesis = () => {
     
     // Wait a moment before starting new speech to ensure cleanup
     setTimeout(() => {
-      // For longer texts, split into more manageable sentences
-      const sentences = text.match(/[^\.!?]+[\.!?]+/g) || [text];
-      const chunks: string[] = [];
+      // Simple approach: if text is too long, split by sentences, otherwise speak as is
+      let textToSpeak = text;
       
-      let currentChunk = '';
-      sentences.forEach(sentence => {
-        const trimmed = sentence.trim();
-        if (trimmed.length <= 160) {
-          chunks.push(trimmed);
-        } else {
-          // Split long sentences at commas or other natural breaks
-          const parts = trimmed.split(/,|\s-\s|\s—\s/).map(p => p.trim()).filter(p => p.length > 0);
-          let currentChunk = '';
-          
-          parts.forEach(part => {
-            if (currentChunk.length + part.length + 2 <= 160) {
-              currentChunk += (currentChunk ? ', ' : '') + part;
-            } else {
-              if (currentChunk) chunks.push(currentChunk);
-              currentChunk = part;
-            }
-          });
-          if (currentChunk) chunks.push(currentChunk);
+      // For very long texts (over 300 characters), split into sentences
+      if (text.length > 300) {
+        const sentences = text.match(/[^\.!?]+[\.!?]+/g);
+        if (sentences && sentences.length > 1) {
+          // Take first few sentences to keep it manageable
+          textToSpeak = sentences.slice(0, 3).join(' ').trim();
+          console.log(`Long text detected, using first part: "${textToSpeak.substring(0, 100)}..."`);
         }
-      });
+      }
 
-      console.log(`Split text into ${chunks.length} chunks`);
+      console.log(`Speaking text: "${textToSpeak.substring(0, 100)}..."`);
 
-      let currentChunkIndex = 0;
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utteranceRef.current = utterance;
 
-      const speakNextChunk = () => {
-        if (currentChunkIndex >= chunks.length) {
-          console.log('🔇 All chunks completed');
-          setIsSpeaking(false);
-          return;
-        }
+      // Use detected language for voice selection
+      const selectedVoice = findBestVoice(voices, detectedLanguage);
 
-        const chunk = chunks[currentChunkIndex];
-        console.log(`🎵 Speaking chunk ${currentChunkIndex + 1}/${chunks.length}: "${chunk.substring(0, 50)}..."`);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        console.log(`🎵 Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+      } else {
+        console.log(`⚠️ No specific voice found for ${detectedLanguage}, using browser default`);
+      }
 
-        const utterance = new SpeechSynthesisUtterance(chunk);
-        utteranceRef.current = utterance;
+      utterance.rate = config.rate;
+      utterance.pitch = config.pitch;
+      utterance.volume = config.volume;
+      utterance.lang = detectedLanguage;
 
-        // Use detected language instead of config language for voice selection
-        const selectedVoice = findBestVoice(voices, detectedLanguage);
-
-        if (selectedVoice) {
-          utterance.voice = selectedVoice;
-          console.log(`🎵 Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-        } else {
-          console.log(`⚠️ No specific voice found for ${detectedLanguage}, using browser default`);
-        }
-
-        utterance.rate = config.rate;
-        utterance.pitch = config.pitch;
-        utterance.volume = config.volume;
-        utterance.lang = detectedLanguage;
-
-        utterance.onstart = () => {
-          if (currentChunkIndex === 0) {
-            console.log('🔊 Speech started');
-            setIsSpeaking(true);
-          }
-        };
-        
-        utterance.onend = () => {
-          console.log(`✅ Chunk ${currentChunkIndex + 1} completed`);
-          currentChunkIndex++;
-          // Small delay between chunks for better reliability
-          setTimeout(() => {
-            speakNextChunk();
-          }, 300);
-        };
-        
-        utterance.onerror = (event) => {
-          console.error(`❌ Speech synthesis error on chunk ${currentChunkIndex + 1}:`, event);
-          console.log('🔄 Attempting to continue with next chunk...');
-          currentChunkIndex++;
-          setTimeout(() => {
-            speakNextChunk();
-          }, 500);
-        };
-
-        try {
-          speechSynthesis.speak(utterance);
-        } catch (error) {
-          console.error('❌ Error starting speech synthesis:', error);
-          setIsSpeaking(false);
-        }
+      utterance.onstart = () => {
+        console.log('🔊 Speech started');
+        setIsSpeaking(true);
+      };
+      
+      utterance.onend = () => {
+        console.log('✅ Speech completed successfully');
+        setIsSpeaking(false);
+      };
+      
+      utterance.onerror = (event) => {
+        console.error('❌ Speech synthesis error:', event);
+        setIsSpeaking(false);
       };
 
-      // Start speaking the first chunk
-      speakNextChunk();
-    }, 300);
+      try {
+        speechSynthesis.speak(utterance);
+      } catch (error) {
+        console.error('❌ Error starting speech synthesis:', error);
+        setIsSpeaking(false);
+      }
+    }, 100); // Reduced delay
   };
 
   const stop = () => {
