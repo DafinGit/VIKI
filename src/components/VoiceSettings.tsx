@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Slider } from '@/components/ui/slider';
-import { SpeechConfig } from '@/hooks/useSpeechSynthesis';
+import { SpeechConfig } from '@/types/speechConfig';
 
 interface VoiceSettingsProps {
   config: SpeechConfig;
