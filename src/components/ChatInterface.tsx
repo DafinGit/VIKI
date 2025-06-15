@@ -5,6 +5,7 @@ import { MessageInput } from './MessageInput';
 import { ChatControls } from './ChatControls';
 import { SpeechControls } from './SpeechControls';
 import { NeuralInterfaceHeader } from './NeuralInterfaceHeader';
+import { ModelSelector } from './ModelSelector';
 import { useChatMessages } from '@/hooks/useChatMessages';
 import { useChatAPI } from '@/hooks/useChatAPI';
 
@@ -14,6 +15,7 @@ interface ChatInterfaceProps {
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const [currentModel, setCurrentModel] = useState('deepseek/deepseek-r1');
+  const [modelProvider, setModelProvider] = useState<'deepseek' | 'gemini'>('deepseek');
   const [temperature, setTemperature] = useState(0.1);
   const [maxTokens, setMaxTokens] = useState(8000);
   const [input, setInput] = useState('');
@@ -24,9 +26,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const { isLoading, sendMessage } = useChatAPI({
     apiKey,
     currentModel,
+    modelProvider,
     temperature,
     maxTokens
   });
+
+  const handleModelProviderChange = (provider: 'deepseek' | 'gemini') => {
+    setModelProvider(provider);
+    if (provider === 'gemini') {
+      setCurrentModel('google/gemini-flash-1.5');
+    } else {
+      setCurrentModel('deepseek/deepseek-r1');
+    }
+  };
 
   const handleSendMessage = async (messageText?: string) => {
     const messageContent = messageText || input.trim();
@@ -70,6 +82,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   return (
     <div className="space-y-6">
       <NeuralInterfaceHeader />
+
+      <ModelSelector 
+        modelProvider={modelProvider}
+        onProviderChange={handleModelProviderChange}
+      />
 
       <SpeechControls 
         onVoiceInput={handleVoiceInput}
