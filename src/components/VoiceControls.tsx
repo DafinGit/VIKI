@@ -17,43 +17,49 @@ export const VoiceControls: React.FC<VoiceControlsProps> = ({
   onTestVoice,
   onStopSpeech
 }) => {
-  const testVoice = () => {
-    const language = supportedLanguages.find(lang => lang.code === currentLanguage);
-    const testMessage = language?.code === 'ro-RO' 
-      ? "Salut! Sistemul neural VIKI este acum online și pregătit pentru conversație în limba română."
-      : language?.code.startsWith('en') 
-      ? "Hello! VIKI Neural System is now online and ready for interaction."
-      : language?.code === 'es-ES' 
-      ? "¡Hola! El Sistema Neural VIKI está ahora en línea y listo para la interacción."
-      : language?.code === 'fr-FR'
-      ? "Bonjour! Le Système Neural VIKI est maintenant en ligne et prêt pour l'interaction."
-      : language?.code === 'de-DE'
-      ? "Hallo! Das VIKI Neural System ist jetzt online und bereit für die Interaktion."
-      : language?.code === 'it-IT'
-      ? "Ciao! Il Sistema Neurale VIKI è ora online e pronto per l'interazione."
-      : language?.code === 'pt-BR'
-      ? "Olá! O Sistema Neural VIKI está agora online e pronto para interação."
-      : language?.code === 'ru-RU'
-      ? "Привет! Нейронная система ВИКИ теперь онлайн и готова к взаимодействию."
-      : language?.code === 'ja-JP'
-      ? "こんにちは！VIKIニューラルシステムがオンラインになり、対話の準備が整いました。"
-      : language?.code === 'ko-KR'
-      ? "안녕하세요! VIKI 신경 시스템이 온라인 상태이며 상호 작용할 준비가 되었습니다."
-      : language?.code === 'zh-CN'
-      ? "你好！VIKI神经系统现已上线，准备进行交互。"
-      : language?.code === 'ar-SA'
-      ? "مرحبا! نظام VIKI العصبي متصل الآن وجاهز للتفاعل."
-      : language?.code === 'hi-IN'
-      ? "नमस्ते! VIKI न्यूरल सिस्टम अब ऑनलाइन है और बातचीत के लिए तैयार है।"
-      : "Hello! VIKI Neural System is now online and ready for interaction.";
-    
+  const getTestMessage = (languageCode: string) => {
+    switch (languageCode) {
+      case 'ro-RO':
+        return "Salut! Sistemul neural VIKI este acum online și pregătit pentru conversație în limba română.";
+      case 'en-US':
+      case 'en-GB':
+        return "Hello! VIKI Neural System is now online and ready for interaction.";
+      case 'es-ES':
+        return "¡Hola! El Sistema Neural VIKI está ahora en línea y listo para la interacción.";
+      case 'fr-FR':
+        return "Bonjour! Le Système Neural VIKI est maintenant en ligne et prêt pour l'interaction.";
+      case 'de-DE':
+        return "Hallo! Das VIKI Neural System ist jetzt online und bereit für die Interaktion.";
+      case 'it-IT':
+        return "Ciao! Il Sistema Neurale VIKI è ora online e pronto per l'interazione.";
+      case 'pt-BR':
+        return "Olá! O Sistema Neural VIKI está agora online e pronto para interação.";
+      case 'ru-RU':
+        return "Привет! Нейронная система ВИКИ теперь онлайн и готова к взаимодействию.";
+      case 'ja-JP':
+        return "こんにちは！VIKIニューラルシステムがオンラインになり、対話の準備が整いました。";
+      case 'ko-KR':
+        return "안녕하세요! VIKI 신경 시스템이 온라인 상태이며 상호 작용할 준비가 되었습니다.";
+      case 'zh-CN':
+        return "你好！VIKI神经系统现已上线，准备进行交互。";
+      case 'ar-SA':
+        return "مرحبا! نظام VIKI العصبي متصل الآن وجاهز للتفاعل.";
+      case 'hi-IN':
+        return "नमस्ते! VIKI न्यूरल सिस्टम अब ऑनलाइन है और बातचीत के लिए तैयार है।";
+      default:
+        return "Hello! VIKI Neural System is now online and ready for interaction.";
+    }
+  };
+
+  const handleTestVoice = () => {
+    console.log('Testing voice for language:', currentLanguage);
     onTestVoice();
   };
 
   return (
     <div className="flex gap-2">
       <Button
-        onClick={testVoice}
+        onClick={handleTestVoice}
         disabled={isSpeaking}
         className="flex-1 bg-cyan-500/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/30 font-mono"
       >

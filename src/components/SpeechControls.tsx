@@ -14,6 +14,40 @@ interface SpeechControlsProps {
   onVoiceInput: (text: string) => void;
 }
 
+const getTestMessage = (languageCode: string) => {
+  switch (languageCode) {
+    case 'ro-RO':
+      return "Salut! Sistemul neural VIKI este acum online și pregătit pentru conversație în limba română.";
+    case 'en-US':
+    case 'en-GB':
+      return "Hello! VIKI Neural System is now online and ready for interaction.";
+    case 'es-ES':
+      return "¡Hola! El Sistema Neural VIKI está ahora en línea y listo para la interacción.";
+    case 'fr-FR':
+      return "Bonjour! Le Système Neural VIKI est maintenant en ligne et prêt pour l'interaction.";
+    case 'de-DE':
+      return "Hallo! Das VIKI Neural System ist jetzt online und bereit für die Interaktion.";
+    case 'it-IT':
+      return "Ciao! Il Sistema Neurale VIKI è ora online e pronto per l'interazione.";
+    case 'pt-BR':
+      return "Olá! O Sistema Neural VIKI está agora online e pronto para interação.";
+    case 'ru-RU':
+      return "Привет! Нейронная система ВИКИ теперь онлайн и готова к взаимодействию.";
+    case 'ja-JP':
+      return "こんにちは！VIKIニューラルシステムがオンラインになり、対話の準備が整いました。";
+    case 'ko-KR':
+      return "안녕하세요! VIKI 신경 시스템이 온라인 상태이며 상호 작용할 준비가 되었습니다.";
+    case 'zh-CN':
+      return "你好！VIKI神经系统现已上线，准备进行交互。";
+    case 'ar-SA':
+      return "مرحبا! نظام VIKI العصبي متصل الآن وجاهز للتفاعل.";
+    case 'hi-IN':
+      return "नमस्ते! VIKI न्यूरल सिस्टम अब ऑनलाइन है और बातचीत के लिए तैयार है।";
+    default:
+      return "Hello! VIKI Neural System is now online and ready for interaction.";
+  }
+};
+
 export const SpeechControls: React.FC<SpeechControlsProps> = ({
   onVoiceInput
 }) => {
@@ -90,11 +124,8 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
       wasListeningBeforeSpeechRef.current = true;
     }
 
-    const language = speech.config.language;
-    const testMessage = language === 'ro-RO' 
-      ? "Salut! Sistemul neural VIKI este acum online și pregătit pentru conversație în limba română."
-      : "Hello! VIKI Neural System is now online and ready for interaction.";
-    
+    const testMessage = getTestMessage(speech.config.language);
+    console.log(`Testing voice in ${speech.config.language}: ${testMessage}`);
     speech.speak(testMessage);
   };
 
@@ -106,7 +137,7 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
             <Volume2 className="w-5 h-5 text-cyan-400" />
             <span className="text-white font-medium font-mono">NEURAL VOICE INTERFACE</span>
             <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
-              ROMANIAN MODE
+              {speech.config.language === 'ro-RO' ? 'ROMANIAN MODE' : 'MULTILINGUAL MODE'}
             </Badge>
           </div>
           <div className="flex items-center gap-2">
