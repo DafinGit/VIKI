@@ -57,7 +57,7 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ isEnabled, onToggle }) =
     return () => {
       stopCamera();
     };
-  }, [isEnabled]);
+  }, [isEnabled, stream]);
 
   useEffect(() => {
     if (videoRef.current && stream) {

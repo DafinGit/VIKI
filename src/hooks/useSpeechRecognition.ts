@@ -18,7 +18,7 @@ export const useSpeechRecognition = () => {
     interimResults: true
   });
 
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const shouldBeListeningRef = useRef(false);
   const isManuallyStoppedRef = useRef(false);
 
@@ -59,7 +59,7 @@ export const useSpeechRecognition = () => {
         }
       };
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         let finalTranscript = '';
         let interimTranscript = '';
 
@@ -79,7 +79,7 @@ export const useSpeechRecognition = () => {
         setInterimTranscript(interimTranscript);
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error:', event.error);
         
         if (event.error === 'no-speech') {

@@ -1,22 +1,12 @@
 
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-interface Language {
-  code: string;
-  name: string;
-  flag: string;
-}
+import { supportedLanguages, Language } from '../constants/languages';
 
 interface LanguageSelectorProps {
   selectedLanguage: string;
   onLanguageChange: (languageCode: string) => void;
 }
-
-const supportedLanguages: Language[] = [
-  { code: 'en-GB', name: 'English (UK)', flag: '🇬🇧' },
-  { code: 'ro-RO', name: 'Romanian', flag: '🇷🇴' }
-];
 
 export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   selectedLanguage,
@@ -40,5 +30,3 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     </div>
   );
 };
-
-export { supportedLanguages };

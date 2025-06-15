@@ -9,6 +9,15 @@ interface CodeAnalyzerProps {
   apiKey: string;
 }
 
+type ModeOptionId = 'analyze' | 'generate' | 'debug';
+
+interface ModeOption {
+  id: ModeOptionId;
+  label: string;
+  desc: string;
+  icon: React.ElementType;
+}
+
 export const CodeAnalyzer: React.FC<CodeAnalyzerProps> = ({ apiKey }) => {
   const [code, setCode] = useState('');
   const [analysis, setAnalysis] = useState('');
@@ -136,17 +145,17 @@ ORDER BY total_spent DESC;`
           </h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
+          {([
             { id: 'analyze', label: 'ANALYZE CODE', desc: 'Complexity & optimization review', icon: Binary },
             { id: 'generate', label: 'GENERATE CODE', desc: 'Create from requirements', icon: Code },
             { id: 'debug', label: 'DEBUG ISSUES', desc: 'Error detection & fixes', icon: Zap }
-          ].map((option) => {
+          ] as ModeOption[]).map((option) => {
             const IconComponent = option.icon;
             return (
               <Button
                 key={option.id}
                 variant={mode === option.id ? "default" : "outline"}
-                onClick={() => setMode(option.id as any)}
+                onClick={() => setMode(option.id)}
                 className={`h-auto p-4 transition-all duration-300 ${
                   mode === option.id 
                     ? 'bg-gradient-to-r from-purple-500 to-violet-500 text-white border-purple-400 shadow-lg shadow-purple-500/25' 
