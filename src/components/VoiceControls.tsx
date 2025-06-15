@@ -19,16 +19,17 @@ export const VoiceControls: React.FC<VoiceControlsProps> = ({
   const getTestMessage = (languageCode: string) => {
     switch (languageCode) {
       case 'ro-RO':
-        return "Salut! Sistemul neural VIKI este acum online și pregătit pentru conversație în limba română.";
+        return "Salut! Sunt VIKI, sistemul neural care este acum online și pregătit pentru conversație în limba română. Vocea mea feminină este optimizată pentru o experiență naturală.";
       case 'en-GB':
-        return "Hello! VIKI Neural System is now online and ready for interaction in British English.";
+        return "Hello! I'm VIKI, your neural system now online and ready for interaction in British English. My feminine voice is optimised for a natural experience.";
       default:
-        return "Hello! VIKI Neural System is now online and ready for interaction.";
+        return "Hello! I'm VIKI, your neural system now online and ready for interaction.";
     }
   };
 
   const handleTestVoice = () => {
     console.log('Testing voice for language:', currentLanguage);
+    console.log('Test message:', getTestMessage(currentLanguage));
     onTestVoice();
   };
 
