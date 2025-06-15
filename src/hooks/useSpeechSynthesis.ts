@@ -15,6 +15,8 @@ export const useSpeechSynthesis = () => {
   });
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const currentTextId = useRef<string>('');
+  const chunkQueue = useRef<string[]>([]);
+  const currentChunkIndex = useRef<number>(0);
 
   useEffect(() => {
     const loadVoices = () => {
@@ -30,6 +32,102 @@ export const useSpeechSynthesis = () => {
       speechSynthesis.removeEventListener('voiceschanged', loadVoices);
     };
   }, []);
+
+  const splitTextIntoChunks = (text: string): string[] => {
+    // Split by sentences first
+    const sentences = text.match(/[^\.!?]+[\.!?]+/g) || [text];
+    const chunks: string[] = [];
+    let currentChunk = '';
+    
+    for (const sentence of sentences) {
+      // If adding this sentence would exceed 200 characters, start a new chunk
+      if (currentChunk.length + sentence.length > 200 && currentChunk.length > 0) {
+        chunks.push(currentChunk.trim());
+        currentChunk = sentence;
+      } else {
+        currentChunk += sentence;
+      }
+    }
+    
+    // Add the last chunk if it has content
+    if (currentChunk.trim()) {
+      chunks.push(currentChunk.trim());
+    }
+    
+    return chunks.filter(chunk => chunk.length > 0);
+  };
+
+  const speakNextChunk = (textId: string, detectedLanguage: string) => {
+    // Check if this is still the current request
+    if (currentTextId.current !== textId || currentChunkIndex.current >= chunkQueue.current.length) {
+      if (currentTextId.current === textId) {
+        console.log(`✅ All chunks completed for request ${textId}`);
+        setIsSpeaking(false);
+      }
+      return;
+    }
+
+    const chunkText = chunkQueue.current[currentChunkIndex.current];
+    console.log(`🎵 Speaking chunk ${currentChunkIndex.current + 1}/${chunkQueue.current.length}: "${chunkText.substring(0, 50)}..."`);
+
+    const utterance = new SpeechSynthesisUtterance(chunkText);
+    utteranceRef.current = utterance;
+
+    const selectedVoice = findBestVoice(voices, detectedLanguage);
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      console.log(`🎵 Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+    }
+
+    utterance.rate = config.rate;
+    utterance.pitch = config.pitch;
+    utterance.volume = config.volume;
+    utterance.lang = detectedLanguage;
+
+    utterance.onstart = () => {
+      if (currentTextId.current === textId) {
+        if (currentChunkIndex.current === 0) {
+          setIsSpeaking(true);
+        }
+      } else {
+        speechSynthesis.cancel();
+      }
+    };
+
+    utterance.onend = () => {
+      if (currentTextId.current === textId) {
+        currentChunkIndex.current++;
+        // Wait a moment before speaking the next chunk
+        setTimeout(() => {
+          speakNextChunk(textId, detectedLanguage);
+        }, 500);
+      }
+    };
+
+    utterance.onerror = (event) => {
+      console.error(`❌ Speech synthesis error on chunk ${currentChunkIndex.current + 1}:`, event);
+      if (currentTextId.current === textId) {
+        // Try to continue with the next chunk on error
+        currentChunkIndex.current++;
+        setTimeout(() => {
+          speakNextChunk(textId, detectedLanguage);
+        }, 1000);
+      }
+    };
+
+    if (currentTextId.current === textId) {
+      try {
+        speechSynthesis.speak(utterance);
+      } catch (error) {
+        console.error(`❌ Error starting speech synthesis for chunk ${currentChunkIndex.current + 1}:`, error);
+        // Try next chunk on error
+        currentChunkIndex.current++;
+        setTimeout(() => {
+          speakNextChunk(textId, detectedLanguage);
+        }, 1000);
+      }
+    }
+  };
 
   const speak = (text: string) => {
     if (!text.trim()) return;
@@ -58,83 +156,32 @@ export const useSpeechSynthesis = () => {
         return;
       }
 
-      // For long texts, take only the first part to avoid browser limitations
-      let textToSpeak = text;
-      if (text.length > 800) {
-        // Split by sentences and take first few
-        const sentences = text.match(/[^\.!?]+[\.!?]+/g) || [text];
-        if (sentences.length > 1) {
-          textToSpeak = sentences.slice(0, Math.min(3, sentences.length)).join(' ').trim();
-          console.log(`Long text detected, using first part (${textToSpeak.length} chars)`);
-        } else {
-          // If no sentences found, just truncate
-          textToSpeak = text.substring(0, 800).trim();
-        }
-      }
+      // Clean the text for speech
+      let cleanText = text
+        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
+        .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
+        .replace(/`(.*?)`/g, '$1') // Remove code markdown
+        .replace(/#{1,6}\s/g, '') // Remove headers
+        .replace(/❌|✅|🧪|📝|⚡|🔧|💡|😊|😄|🌟|🎉/g, '') // Remove emojis
+        .replace(/\n+/g, '. ') // Replace line breaks with periods
+        .trim();
 
-      console.log(`Speaking text: "${textToSpeak.substring(0, 100)}..."`);
+      // Split text into manageable chunks
+      chunkQueue.current = splitTextIntoChunks(cleanText);
+      currentChunkIndex.current = 0;
 
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utteranceRef.current = utterance;
+      console.log(`Split text into ${chunkQueue.current.length} chunks`);
 
-      // Use detected language for voice selection
-      const selectedVoice = findBestVoice(voices, detectedLanguage);
-
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        console.log(`🎵 Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-      } else {
-        console.log(`⚠️ No specific voice found for ${detectedLanguage}, using browser default`);
-      }
-
-      utterance.rate = config.rate;
-      utterance.pitch = config.pitch;
-      utterance.volume = config.volume;
-      utterance.lang = detectedLanguage;
-
-      utterance.onstart = () => {
-        // Double-check this is still the current request
-        if (currentTextId.current === textId) {
-          console.log(`🔊 Speech started for request ${textId}`);
-          setIsSpeaking(true);
-        } else {
-          console.log(`❌ Speech start cancelled for old request ${textId}`);
-          speechSynthesis.cancel();
-        }
-      };
-      
-      utterance.onend = () => {
-        console.log(`✅ Speech completed for request ${textId}`);
-        if (currentTextId.current === textId) {
-          setIsSpeaking(false);
-        }
-      };
-      
-      utterance.onerror = (event) => {
-        console.error(`❌ Speech synthesis error for request ${textId}:`, event);
-        if (currentTextId.current === textId) {
-          setIsSpeaking(false);
-        }
-      };
-
-      // Only speak if this is still the current request
-      if (currentTextId.current === textId) {
-        try {
-          speechSynthesis.speak(utterance);
-          console.log(`🎤 Started speaking request ${textId}`);
-        } catch (error) {
-          console.error(`❌ Error starting speech synthesis for request ${textId}:`, error);
-          setIsSpeaking(false);
-        }
-      } else {
-        console.log(`❌ Speech request ${textId} cancelled before speaking`);
-      }
+      // Start speaking the first chunk
+      speakNextChunk(textId, detectedLanguage);
     }, 200);
   };
 
   const stop = () => {
     console.log('🛑 Stopping speech synthesis');
     currentTextId.current = ''; // Clear current request
+    chunkQueue.current = [];
+    currentChunkIndex.current = 0;
     speechSynthesis.cancel();
     setIsSpeaking(false);
   };
