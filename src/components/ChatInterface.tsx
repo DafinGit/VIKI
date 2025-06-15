@@ -6,6 +6,9 @@ import { MessageSquare, Cpu, Activity, Zap } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { ChatControls } from './ChatControls';
+import { SpeechControls } from './SpeechControls';
+import { CameraFeed } from './CameraFeed';
+import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -26,7 +29,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const [maxTokens, setMaxTokens] = useState(8000);
   const [input, setInput] = useState('');
   const [showThinking, setShowThinking] = useState(true);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const speech = useSpeechSynthesis();
 
   const models = [
     'deepseek/deepseek-r1',
@@ -39,23 +44,46 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+  // Auto-speak assistant responses
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
+      // Clean the content for speech (remove markdown and formatting)
+      const cleanContent = lastMessage.content
+        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
+        .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
+        .replace(/`(.*?)`/g, '$1') // Remove code markdown
+        .replace(/#{1,6}\s/g, '') // Remove headers
+        .replace(/❌|✅|🧪|📝|⚡|🔧|💡/g, '') // Remove emojis
+        .replace(/\n+/g, '. ') // Replace line breaks with periods
+        .trim();
+      
+      if (cleanContent && cleanContent.length > 0) {
+        setTimeout(() => {
+          speech.speak(cleanContent);
+        }, 500); // Small delay to ensure UI updates first
+      }
+    }
+  }, [messages, speech]);
+
+  const handleSendMessage = async (messageText?: string) => {
+    const messageContent = messageText || input.trim();
+    if (!messageContent || isLoading) return;
 
     const userMessage: Message = {
       role: 'user',
-      content: input.trim(),
+      content: messageContent,
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-    setInput('');
+    if (!messageText) setInput('');
 
     try {
       console.log('=== SENDING CHAT MESSAGE ===');
       console.log('Model:', currentModel);
-      console.log('Message:', input);
+      console.log('Message:', messageContent);
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -74,7 +102,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
             })),
             {
               role: 'user',
-              content: input.trim()
+              content: messageContent
             }
           ],
           temperature,
@@ -120,12 +148,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
     }
   };
 
+  const handleVoiceInput = (text: string) => {
+    console.log('Voice input received:', text);
+    if (text.trim()) {
+      handleSendMessage(text.trim());
+    }
+  };
+
   const clearMessages = () => {
     setMessages([]);
   };
 
   const toggleThinking = () => {
     setShowThinking(prev => !prev);
+  };
+
+  const toggleVideo = () => {
+    setIsVideoEnabled(prev => !prev);
   };
 
   return (
@@ -143,7 +182,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
               <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono">
                 NEURAL INTERFACE SYSTEM
               </h2>
-              <p className="text-cyan-300 text-sm font-mono">Advanced Reasoning Engine v2.1</p>
+              <p className="text-cyan-300 text-sm font-mono">Advanced Reasoning Engine v2.1 • I, Robot Protocol</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -155,17 +194,36 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
               <Zap className="w-4 h-4 mr-1" />
               ONLINE
             </Badge>
+            {speech.isSpeaking && (
+              <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 border-orange-500/40 font-mono animate-pulse">
+                <Activity className="w-4 h-4 mr-1" />
+                SPEAKING
+              </Badge>
+            )}
           </div>
         </div>
         
         <div className="border-l-4 border-cyan-400 pl-4">
           <p className="text-gray-300 font-mono text-sm leading-relaxed">
-            Advanced conversational AI with deep reasoning capabilities and chain-of-thought processing.
+            Advanced conversational AI with deep reasoning capabilities, multimodal interaction, and I, Robot-style voice synthesis.
             <br />
-            <span className="text-cyan-400">Initialize neural conversation protocol to begin cognitive interaction.</span>
+            <span className="text-cyan-400">Neural conversation protocol initialized. Voice interface and visual sensors available.</span>
           </p>
         </div>
       </Card>
+
+      <SpeechControls 
+        onVoiceInput={handleVoiceInput}
+        isVideoEnabled={isVideoEnabled}
+        onToggleVideo={toggleVideo}
+      />
+
+      {isVideoEnabled && (
+        <CameraFeed 
+          isEnabled={isVideoEnabled}
+          onToggle={toggleVideo}
+        />
+      )}
 
       <ChatControls
         showThinking={showThinking}
@@ -182,7 +240,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
       <MessageInput
         input={input}
         onInputChange={setInput}
-        onSendMessage={handleSendMessage}
+        onSendMessage={() => handleSendMessage()}
         onKeyPress={handleKeyPress}
         isLoading={isLoading}
         selectedImage=""
