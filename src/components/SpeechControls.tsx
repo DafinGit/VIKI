@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+import { LanguageSelector } from './LanguageSelector';
+import { VoiceSettings } from './VoiceSettings';
+import { VoiceControls } from './VoiceControls';
+import { MicrophoneControls } from './MicrophoneControls';
 
 interface SpeechControlsProps {
   onVoiceInput: (text: string) => void;
@@ -19,23 +20,6 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
   const speech = useSpeechSynthesis();
   const recognition = useSpeechRecognition();
   const lastProcessedTranscriptRef = React.useRef<string>('');
-
-  const supportedLanguages = [
-    { code: 'en-US', name: 'English (US)', flag: '🇺🇸' },
-    { code: 'en-GB', name: 'English (UK)', flag: '🇬🇧' },
-    { code: 'es-ES', name: 'Spanish', flag: '🇪🇸' },
-    { code: 'fr-FR', name: 'French', flag: '🇫🇷' },
-    { code: 'de-DE', name: 'German', flag: '🇩🇪' },
-    { code: 'it-IT', name: 'Italian', flag: '🇮🇹' },
-    { code: 'pt-BR', name: 'Portuguese', flag: '🇧🇷' },
-    { code: 'ro-RO', name: 'Romanian', flag: '🇷🇴' },
-    { code: 'ru-RU', name: 'Russian', flag: '🇷🇺' },
-    { code: 'ja-JP', name: 'Japanese', flag: '🇯🇵' },
-    { code: 'ko-KR', name: 'Korean', flag: '🇰🇷' },
-    { code: 'zh-CN', name: 'Chinese (Simplified)', flag: '🇨🇳' },
-    { code: 'ar-SA', name: 'Arabic', flag: '🇸🇦' },
-    { code: 'hi-IN', name: 'Hindi', flag: '🇮🇳' }
-  ];
 
   React.useEffect(() => {
     // Only process new transcripts to prevent duplicates
@@ -64,37 +48,8 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
     recognition.setConfig(prev => ({ ...prev, language: languageCode }));
   };
 
-  const testVoice = () => {
-    const language = supportedLanguages.find(lang => lang.code === speech.config.language);
-    const testMessage = language?.code.startsWith('en') 
-      ? "VIKI Neural System is now online and ready for interaction."
-      : language?.code === 'es-ES' 
-      ? "El Sistema Neural VIKI está ahora en línea y listo para la interacción."
-      : language?.code === 'fr-FR'
-      ? "Le Système Neural VIKI est maintenant en ligne et prêt pour l'interaction."
-      : language?.code === 'de-DE'
-      ? "Das VIKI Neural System ist jetzt online und bereit für die Interaktion."
-      : language?.code === 'it-IT'
-      ? "Il Sistema Neurale VIKI è ora online e pronto per l'interazione."
-      : language?.code === 'pt-BR'
-      ? "O Sistema Neural VIKI está agora online e pronto para interação."
-      : language?.code === 'ro-RO'
-      ? "Sistemul Neural VIKI este acum online și gata pentru interacțiune."
-      : language?.code === 'ru-RU'
-      ? "Нейронная система ВИКИ теперь онлайн и готова к взаимодействию."
-      : language?.code === 'ja-JP'
-      ? "VIKIニューラルシステムがオンラインになり、対話の準備が整いました。"
-      : language?.code === 'ko-KR'
-      ? "VIKI 신경 시스템이 온라인 상태이며 상호 작용할 준비가 되었습니다."
-      : language?.code === 'zh-CN'
-      ? "VIKI神经系统现已上线，准备进行交互。"
-      : language?.code === 'ar-SA'
-      ? "نظام VIKI العصبي متصل الآن وجاهز للتفاعل."
-      : language?.code === 'hi-IN'
-      ? "VIKI न्यूरल सिस्टम अब ऑनलाइन है और बातचीत के लिए तैयार है।"
-      : "VIKI Neural System is now online and ready for interaction.";
-    
-    speech.speak(testMessage);
+  const handleVoiceConfigChange = (configUpdate: Partial<typeof speech.config>) => {
+    speech.setConfig(prev => ({ ...prev, ...configUpdate }));
   };
 
   const handleMicToggle = () => {
@@ -126,100 +81,37 @@ export const SpeechControls: React.FC<SpeechControlsProps> = ({
                 SPEAKING
               </Badge>
             )}
-            {recognition.isListening && (
-              <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30 animate-pulse">
-                LISTENING
-              </Badge>
-            )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
-            <div>
-              <label className="text-sm text-cyan-300 font-mono mb-2 block">LANGUAGE PROTOCOL</label>
-              <Select value={speech.config.language} onValueChange={handleLanguageChange}>
-                <SelectTrigger className="bg-black/30 border-cyan-500/40 text-cyan-100">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-black/90 border-cyan-500/40">
-                  {supportedLanguages.map((lang) => (
-                    <SelectItem key={lang.code} value={lang.code} className="text-cyan-100">
-                      {lang.flag} {lang.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <LanguageSelector
+              selectedLanguage={speech.config.language}
+              onLanguageChange={handleLanguageChange}
+            />
 
-            <div className="space-y-2">
-              <label className="text-sm text-cyan-300 font-mono">SPEECH RATE: {speech.config.rate}</label>
-              <Slider
-                value={[speech.config.rate]}
-                onValueChange={(value) => speech.setConfig(prev => ({ ...prev, rate: value[0] }))}
-                min={0.5}
-                max={2}
-                step={0.1}
-                className="w-full"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-cyan-300 font-mono">VOICE PITCH: {speech.config.pitch}</label>
-              <Slider
-                value={[speech.config.pitch]}
-                onValueChange={(value) => speech.setConfig(prev => ({ ...prev, pitch: value[0] }))}
-                min={0.5}
-                max={2}
-                step={0.1}
-                className="w-full"
-              />
-            </div>
+            <VoiceSettings
+              config={speech.config}
+              onConfigChange={handleVoiceConfigChange}
+            />
           </div>
 
           <div className="space-y-3">
-            <div className="flex gap-2">
-              <Button
-                onClick={testVoice}
-                disabled={speech.isSpeaking}
-                className="flex-1 bg-cyan-500/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/30 font-mono"
-              >
-                <Volume2 className="w-4 h-4 mr-2" />
-                TEST VOICE
-              </Button>
-              <Button
-                onClick={speech.stop}
-                disabled={!speech.isSpeaking}
-                className="bg-red-500/20 text-red-300 border-red-500/40 hover:bg-red-500/30 font-mono"
-              >
-                <VolumeX className="w-4 h-4" />
-              </Button>
-            </div>
+            <VoiceControls
+              isSpeaking={speech.isSpeaking}
+              currentLanguage={speech.config.language}
+              onTestVoice={() => speech.speak("Test message")}
+              onStopSpeech={speech.stop}
+            />
 
-            {recognition.isSupported && (
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleMicToggle}
-                  disabled={speech.isSpeaking}
-                  className={`flex-1 font-mono ${
-                    recognition.isListening 
-                      ? 'bg-red-500/20 text-red-300 border-red-500/40 hover:bg-red-500/30' 
-                      : speech.isSpeaking
-                      ? 'bg-gray-500/20 text-gray-400 border-gray-500/40'
-                      : 'bg-blue-500/20 text-blue-300 border-blue-500/40 hover:bg-blue-500/30'
-                  }`}
-                >
-                  {recognition.isListening ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
-                  {speech.isSpeaking ? 'AI SPEAKING...' : recognition.isListening ? 'STOP LISTENING' : 'START LISTENING'}
-                </Button>
-              </div>
-            )}
-
-            {recognition.interimTranscript && (
-              <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 text-xs font-mono">
-                Listening: {recognition.interimTranscript}
-              </div>
-            )}
+            <MicrophoneControls
+              isListening={recognition.isListening}
+              isSpeaking={speech.isSpeaking}
+              isSupported={recognition.isSupported}
+              interimTranscript={recognition.interimTranscript}
+              onToggleMic={handleMicToggle}
+            />
           </div>
         </div>
       </div>
