@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
@@ -36,7 +35,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const handleModelProviderChange = (provider: 'deepseek' | 'gemini') => {
     setModelProvider(provider);
     if (provider === 'gemini') {
-      setCurrentModel('google/gemini-2.0-flash-thinking-exp:free');
+      setCurrentModel('google/gemini-2.0-flash-exp:free');
     } else {
       setCurrentModel('deepseek/deepseek-r1');
     }

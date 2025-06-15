@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -66,13 +65,13 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           <span className={`font-mono text-sm font-semibold ${
             modelProvider === 'deepseek' ? 'text-orange-400' : 'text-green-400'
           }`}>
-            ACTIVE: {modelProvider === 'deepseek' ? 'DEEPSEEK-R1' : 'GEMINI-2.0-THINKING-EXP'}
+            ACTIVE: {modelProvider === 'deepseek' ? 'DEEPSEEK-R1' : 'GEMINI-2.0-FLASH-EXP'}
           </span>
         </div>
         <p className="text-gray-300 text-sm font-mono">
           {modelProvider === 'deepseek' 
             ? 'Advanced reasoning model with enhanced chain-of-thought capabilities. Uses OpenRouter API.'
-            : 'Latest Google Gemini 2.0 Flash Thinking Experimental model. Routed through OpenRouter using your existing API key.'
+            : 'Latest Google Gemini 2.0 Flash Experimental model. Routed through OpenRouter using your existing API key.'
           }
         </p>
       </div>
