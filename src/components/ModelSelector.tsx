@@ -42,7 +42,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           
           <div className="flex items-center gap-3">
             <Sparkles className="w-5 h-5 text-green-400" />
-            <span className="font-mono font-semibold text-green-300">GEMINI-FLASH</span>
+            <span className="font-mono font-semibold text-green-300">GEMINI-2.0</span>
             <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/40 font-mono text-xs">
               <Brain className="w-3 h-3 mr-1" />
               Direct API
@@ -59,13 +59,13 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           <span className={`font-mono text-sm font-semibold ${
             modelProvider === 'deepseek' ? 'text-orange-400' : 'text-green-400'
           }`}>
-            ACTIVE: {modelProvider === 'deepseek' ? 'DEEPSEEK-R1' : 'GEMINI-FLASH-1.5'}
+            ACTIVE: {modelProvider === 'deepseek' ? 'DEEPSEEK-R1' : 'GEMINI-2.0-FLASH-EXP'}
           </span>
         </div>
         <p className="text-gray-300 text-sm font-mono">
           {modelProvider === 'deepseek' 
             ? 'Advanced reasoning model with enhanced chain-of-thought capabilities. Requires OpenRouter credits.'
-            : 'Fast and efficient Google Gemini model with direct API access. Use when OpenRouter credits are low.'
+            : 'Latest Google Gemini 2.0 Flash Experimental model with enhanced multimodal capabilities and faster responses.'
           }
         </p>
       </div>

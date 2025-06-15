@@ -31,8 +31,8 @@ export const useChatAPI = (config: ChatAPIConfig) => {
       let response;
 
       if (config.modelProvider === 'gemini') {
-        // Use Google Gemini API directly
-        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${config.apiKey}`, {
+        // Use Google Gemini API directly with 2.0 Flash Experimental
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${config.apiKey}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

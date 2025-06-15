@@ -34,7 +34,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ apiKey }) => {
   const handleModelProviderChange = (provider: 'deepseek' | 'gemini') => {
     setModelProvider(provider);
     if (provider === 'gemini') {
-      setCurrentModel('google/gemini-flash-1.5');
+      setCurrentModel('gemini-2.0-flash-exp');
     } else {
       setCurrentModel('deepseek/deepseek-r1');
     }
