@@ -40,8 +40,8 @@ export const useChatMessages = () => {
       // Set the message as spoken immediately to prevent duplicates
       setLastSpokenMessageId(lastMessage.id);
       
-      // Clean the content for speech
-      const cleanContent = lastMessage.content
+      // Clean the content for speech - remove translations and English text
+      let cleanContent = lastMessage.content
         .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
         .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
         .replace(/`(.*?)`/g, '$1') // Remove code markdown
@@ -49,6 +49,17 @@ export const useChatMessages = () => {
         .replace(/❌|✅|🧪|📝|⚡|🔧|💡|😊|😄|🌟|🎉/g, '') // Remove emojis
         .replace(/\n+/g, '. ') // Replace line breaks with periods
         .trim();
+
+      // Remove translation parts - anything in parentheses that starts with "Translated:"
+      cleanContent = cleanContent.replace(/\s*\*?\(Translated:.*?\)\*?/g, '');
+      
+      // Remove any remaining parenthetical translations or explanations
+      cleanContent = cleanContent.replace(/\s*\([^)]*Translation[^)]*\)/gi, '');
+      cleanContent = cleanContent.replace(/\s*\([^)]*Romana[^)]*\)/gi, '');
+      cleanContent = cleanContent.replace(/\s*\([^)]*English[^)]*\)/gi, '');
+      
+      // Clean up any double spaces or trailing punctuation
+      cleanContent = cleanContent.replace(/\s+/g, ' ').trim();
       
       if (cleanContent && cleanContent.length > 0) {
         // Debounce speech to prevent rapid fire
