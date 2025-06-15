@@ -33,19 +33,49 @@ export const useSpeechSynthesis = () => {
     };
   }, []);
 
+  const cleanTextForSpeech = (text: string): string => {
+    return text
+      // Remove markdown formatting
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
+      .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
+      .replace(/`(.*?)`/g, '$1') // Remove code markdown
+      .replace(/#{1,6}\s/g, '') // Remove headers
+      .replace(/---+/g, '') // Remove horizontal rules
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Remove links, keep text
+      
+      // Remove special characters and emojis
+      .replace(/[🌳✨🎄🌟🎉🔧💡😊😄❌✅🧪📝⚡🎀👩👨❓]/g, '') // Remove emojis
+      .replace(/[•·]/g, '') // Remove bullet points
+      
+      // Clean up structure
+      .replace(/\n+/g, '. ') // Replace line breaks with periods
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .replace(/\.+/g, '.') // Replace multiple periods with single period
+      .replace(/\.\s*\./g, '.') // Remove double periods
+      
+      // Remove remaining formatting artifacts
+      .replace(/\s*-\s*/g, '. ') // Replace dashes with periods
+      .replace(/:\s*$/g, '.') // Replace trailing colons with periods
+      
+      .trim();
+  };
+
   const splitTextIntoChunks = (text: string): string[] => {
-    // Split by sentences first
+    // Split by sentences first, but handle multiple sentence endings
     const sentences = text.match(/[^\.!?]+[\.!?]+/g) || [text];
     const chunks: string[] = [];
     let currentChunk = '';
     
     for (const sentence of sentences) {
-      // If adding this sentence would exceed 200 characters, start a new chunk
-      if (currentChunk.length + sentence.length > 200 && currentChunk.length > 0) {
+      const cleanSentence = sentence.trim();
+      if (!cleanSentence) continue;
+      
+      // If adding this sentence would exceed 180 characters, start a new chunk
+      if (currentChunk.length + cleanSentence.length > 180 && currentChunk.length > 0) {
         chunks.push(currentChunk.trim());
-        currentChunk = sentence;
+        currentChunk = cleanSentence;
       } else {
-        currentChunk += sentence;
+        currentChunk += (currentChunk ? ' ' : '') + cleanSentence;
       }
     }
     
@@ -100,7 +130,7 @@ export const useSpeechSynthesis = () => {
         // Wait a moment before speaking the next chunk
         setTimeout(() => {
           speakNextChunk(textId, detectedLanguage);
-        }, 500);
+        }, 400);
       }
     };
 
@@ -111,7 +141,7 @@ export const useSpeechSynthesis = () => {
         currentChunkIndex.current++;
         setTimeout(() => {
           speakNextChunk(textId, detectedLanguage);
-        }, 1000);
+        }, 800);
       }
     };
 
@@ -124,7 +154,7 @@ export const useSpeechSynthesis = () => {
         currentChunkIndex.current++;
         setTimeout(() => {
           speakNextChunk(textId, detectedLanguage);
-        }, 1000);
+        }, 800);
       }
     }
   };
@@ -138,11 +168,21 @@ export const useSpeechSynthesis = () => {
 
     console.log(`\n=== SPEAKING TEXT ===`);
     console.log(`Text ID: ${textId}`);
-    console.log(`Text length: ${text.length} characters`);
+    console.log(`Original text length: ${text.length} characters`);
     console.log(`Current config language: ${config.language}`);
 
+    // Clean the text thoroughly for speech
+    const cleanText = cleanTextForSpeech(text);
+    console.log(`Cleaned text length: ${cleanText.length} characters`);
+    console.log(`Cleaned text preview: "${cleanText.substring(0, 100)}..."`);
+
+    if (!cleanText.trim()) {
+      console.log('❌ No speakable content after cleaning');
+      return;
+    }
+
     // Detect the actual language of the text
-    const detectedLanguage = detectTextLanguage(text);
+    const detectedLanguage = detectTextLanguage(cleanText);
     console.log(`Detected text language: ${detectedLanguage}`);
 
     // Stop any current speech completely
@@ -156,21 +196,14 @@ export const useSpeechSynthesis = () => {
         return;
       }
 
-      // Clean the text for speech
-      let cleanText = text
-        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
-        .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
-        .replace(/`(.*?)`/g, '$1') // Remove code markdown
-        .replace(/#{1,6}\s/g, '') // Remove headers
-        .replace(/❌|✅|🧪|📝|⚡|🔧|💡|😊|😄|🌟|🎉/g, '') // Remove emojis
-        .replace(/\n+/g, '. ') // Replace line breaks with periods
-        .trim();
-
       // Split text into manageable chunks
       chunkQueue.current = splitTextIntoChunks(cleanText);
       currentChunkIndex.current = 0;
 
       console.log(`Split text into ${chunkQueue.current.length} chunks`);
+      chunkQueue.current.forEach((chunk, index) => {
+        console.log(`Chunk ${index + 1}: "${chunk.substring(0, 60)}..."`);
+      });
 
       // Start speaking the first chunk
       speakNextChunk(textId, detectedLanguage);
