@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { detectTextLanguage } from '@/utils/languageDetection';
 import { findBestVoice, logVoiceAnalysis } from '@/utils/voiceSelection';
@@ -13,6 +14,7 @@ export const useSpeechSynthesis = () => {
     volume: 0.9
   });
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const currentTextId = useRef<string>('');
 
   useEffect(() => {
     const loadVoices = () => {
@@ -32,7 +34,12 @@ export const useSpeechSynthesis = () => {
   const speak = (text: string) => {
     if (!text.trim()) return;
 
+    // Generate unique ID for this speech request
+    const textId = Date.now().toString();
+    currentTextId.current = textId;
+
     console.log(`\n=== SPEAKING TEXT ===`);
+    console.log(`Text ID: ${textId}`);
     console.log(`Text length: ${text.length} characters`);
     console.log(`Current config language: ${config.language}`);
 
@@ -40,21 +47,28 @@ export const useSpeechSynthesis = () => {
     const detectedLanguage = detectTextLanguage(text);
     console.log(`Detected text language: ${detectedLanguage}`);
 
-    // Stop any current speech
+    // Stop any current speech completely
     speechSynthesis.cancel();
     
-    // Wait a moment before starting new speech to ensure cleanup
+    // Wait a moment for cleanup
     setTimeout(() => {
-      // Simple approach: if text is too long, split by sentences, otherwise speak as is
+      // Check if this is still the current request
+      if (currentTextId.current !== textId) {
+        console.log(`❌ Speech request ${textId} cancelled - newer request exists`);
+        return;
+      }
+
+      // For long texts, take only the first part to avoid browser limitations
       let textToSpeak = text;
-      
-      // For very long texts (over 300 characters), split into sentences
-      if (text.length > 300) {
-        const sentences = text.match(/[^\.!?]+[\.!?]+/g);
-        if (sentences && sentences.length > 1) {
-          // Take first few sentences to keep it manageable
-          textToSpeak = sentences.slice(0, 3).join(' ').trim();
-          console.log(`Long text detected, using first part: "${textToSpeak.substring(0, 100)}..."`);
+      if (text.length > 800) {
+        // Split by sentences and take first few
+        const sentences = text.match(/[^\.!?]+[\.!?]+/g) || [text];
+        if (sentences.length > 1) {
+          textToSpeak = sentences.slice(0, Math.min(3, sentences.length)).join(' ').trim();
+          console.log(`Long text detected, using first part (${textToSpeak.length} chars)`);
+        } else {
+          // If no sentences found, just truncate
+          textToSpeak = text.substring(0, 800).trim();
         }
       }
 
@@ -79,31 +93,48 @@ export const useSpeechSynthesis = () => {
       utterance.lang = detectedLanguage;
 
       utterance.onstart = () => {
-        console.log('🔊 Speech started');
-        setIsSpeaking(true);
+        // Double-check this is still the current request
+        if (currentTextId.current === textId) {
+          console.log(`🔊 Speech started for request ${textId}`);
+          setIsSpeaking(true);
+        } else {
+          console.log(`❌ Speech start cancelled for old request ${textId}`);
+          speechSynthesis.cancel();
+        }
       };
       
       utterance.onend = () => {
-        console.log('✅ Speech completed successfully');
-        setIsSpeaking(false);
+        console.log(`✅ Speech completed for request ${textId}`);
+        if (currentTextId.current === textId) {
+          setIsSpeaking(false);
+        }
       };
       
       utterance.onerror = (event) => {
-        console.error('❌ Speech synthesis error:', event);
-        setIsSpeaking(false);
+        console.error(`❌ Speech synthesis error for request ${textId}:`, event);
+        if (currentTextId.current === textId) {
+          setIsSpeaking(false);
+        }
       };
 
-      try {
-        speechSynthesis.speak(utterance);
-      } catch (error) {
-        console.error('❌ Error starting speech synthesis:', error);
-        setIsSpeaking(false);
+      // Only speak if this is still the current request
+      if (currentTextId.current === textId) {
+        try {
+          speechSynthesis.speak(utterance);
+          console.log(`🎤 Started speaking request ${textId}`);
+        } catch (error) {
+          console.error(`❌ Error starting speech synthesis for request ${textId}:`, error);
+          setIsSpeaking(false);
+        }
+      } else {
+        console.log(`❌ Speech request ${textId} cancelled before speaking`);
       }
-    }, 100); // Reduced delay
+    }, 200);
   };
 
   const stop = () => {
     console.log('🛑 Stopping speech synthesis');
+    currentTextId.current = ''; // Clear current request
     speechSynthesis.cancel();
     setIsSpeaking(false);
   };
