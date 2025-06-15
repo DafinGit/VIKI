@@ -46,34 +46,45 @@ export const useSpeechSynthesis = () => {
     
     // Wait a moment before starting new speech to ensure cleanup
     setTimeout(() => {
-      // Split long text into smaller chunks to prevent synthesis errors
-      const maxChunkLength = 200; // Reduce chunk size for better reliability
-      const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+      // For longer texts, split into more manageable sentences
+      const sentences = text.match(/[^\.!?]+[\.!?]+/g) || [text];
       const chunks: string[] = [];
       
       let currentChunk = '';
       sentences.forEach(sentence => {
-        const trimmedSentence = sentence.trim();
-        if (currentChunk.length + trimmedSentence.length + 1 <= maxChunkLength) {
-          currentChunk += (currentChunk ? '. ' : '') + trimmedSentence;
+        const trimmed = sentence.trim();
+        if (trimmed.length <= 160) {
+          chunks.push(trimmed);
         } else {
-          if (currentChunk) chunks.push(currentChunk + '.');
-          currentChunk = trimmedSentence;
+          // Split long sentences at commas or other natural breaks
+          const parts = trimmed.split(/,|\s-\s|\s—\s/).map(p => p.trim()).filter(p => p.length > 0);
+          let currentChunk = '';
+          
+          parts.forEach(part => {
+            if (currentChunk.length + part.length + 2 <= 160) {
+              currentChunk += (currentChunk ? ', ' : '') + part;
+            } else {
+              if (currentChunk) chunks.push(currentChunk);
+              currentChunk = part;
+            }
+          });
+          if (currentChunk) chunks.push(currentChunk);
         }
       });
-      if (currentChunk) chunks.push(currentChunk + '.');
 
       console.log(`Split text into ${chunks.length} chunks`);
 
-      const speakChunk = (chunkIndex: number) => {
-        if (chunkIndex >= chunks.length) {
+      let currentChunkIndex = 0;
+
+      const speakNextChunk = () => {
+        if (currentChunkIndex >= chunks.length) {
           console.log('🔇 All chunks completed');
           setIsSpeaking(false);
           return;
         }
 
-        const chunk = chunks[chunkIndex];
-        console.log(`🎵 Speaking chunk ${chunkIndex + 1}/${chunks.length}: "${chunk.substring(0, 50)}..."`);
+        const chunk = chunks[currentChunkIndex];
+        console.log(`🎵 Speaking chunk ${currentChunkIndex + 1}/${chunks.length}: "${chunk.substring(0, 50)}..."`);
 
         const utterance = new SpeechSynthesisUtterance(chunk);
         utteranceRef.current = utterance;
@@ -94,26 +105,27 @@ export const useSpeechSynthesis = () => {
         utterance.lang = detectedLanguage;
 
         utterance.onstart = () => {
-          if (chunkIndex === 0) {
+          if (currentChunkIndex === 0) {
             console.log('🔊 Speech started');
             setIsSpeaking(true);
           }
         };
         
         utterance.onend = () => {
-          console.log(`✅ Chunk ${chunkIndex + 1} completed`);
-          // Small delay between chunks to prevent issues
+          console.log(`✅ Chunk ${currentChunkIndex + 1} completed`);
+          currentChunkIndex++;
+          // Small delay between chunks for better reliability
           setTimeout(() => {
-            speakChunk(chunkIndex + 1);
-          }, 100);
+            speakNextChunk();
+          }, 300);
         };
         
         utterance.onerror = (event) => {
-          console.error(`❌ Speech synthesis error on chunk ${chunkIndex + 1}:`, event);
+          console.error(`❌ Speech synthesis error on chunk ${currentChunkIndex + 1}:`, event);
           console.log('🔄 Attempting to continue with next chunk...');
-          // Try to continue with next chunk even if current one fails
+          currentChunkIndex++;
           setTimeout(() => {
-            speakChunk(chunkIndex + 1);
+            speakNextChunk();
           }, 500);
         };
 
@@ -126,8 +138,8 @@ export const useSpeechSynthesis = () => {
       };
 
       // Start speaking the first chunk
-      speakChunk(0);
-    }, 200);
+      speakNextChunk();
+    }, 300);
   };
 
   const stop = () => {
